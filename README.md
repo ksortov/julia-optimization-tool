@@ -1,1 +1,1 @@
-# julia-optimization-tool
+# Julia Optimization Tool for Design Project
