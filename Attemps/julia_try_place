@@ -1,0 +1,19 @@
+# define packages to be used
+ using JuMP
+ using Ipopt
+ using DataFrames
+ using CSV
+
+ my_content ="""Animal,Colour,Cover
+ bunny,white,fur
+ dragon,green,scales
+ cow,brown,fur
+ pigeon,grey,feathers"""
+
+ open("animals.csv", "w") do out_file
+    # write will return the number of bytes written to the file
+    # that's what that 90 is about
+    write(out_file, my_content)
+ end
+ animals = CSV.read("animals.csv")
+ iris = CSV.read("iris.csv")
