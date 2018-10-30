@@ -1,0 +1,7 @@
+# define packages to be used
+ using JuMP
+ using Ipopt
+ using DataFrames
+
+ iris = readtable("iris.csv")
+ 
