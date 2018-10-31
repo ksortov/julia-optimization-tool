@@ -16,7 +16,7 @@ b_v = ones(Float64, V, 1) # cost of substation @ voltage v ($/MW)
 r_v = ones(Float64, V, 1) # resistance on link for voltage v (ohm/km)
 f_v = ones(Float64, V, 1) # voltage of v (kV)
 p_v = ones(Float64, V, 1) # power capacity of a link @ voltage v (MW)
-del_nt = ones(Any, N, T) # net power injection @ node n & time t (MW)
+del_nt = ones(Float64, N, T) # net power injection @ node n & time t (MW)
 lambda_nt = ones(Float64, N, T) # value of energy @ node & time t ($/MWh)
 fmax = 1 # maximum voltage value for nodes (pu)
 fmin = 1 # minimum voltage value for nodes (pu)
@@ -27,9 +27,9 @@ c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 # define problem variables
 @variable(m, x_nm[1:N, 1:N], Int) # number of parallel lines b/w nodes n & m
 @variable(m, y_v[1:V], Bin) # boolean for selected voltage
-@variable(m, g_nt[1:N, 1:T], Any) # generation injection @ node n & time t (MW)
-@variable(m, p_nmt[1:N, 1:N, 1:T], Any) # power flow b/w nodes n & m @ time t (MW)
-@variable(m, u_nt[1:N, 1:T], Any) # voltage @ node n & time t (kV)
+@variable(m, g_nt[1:N, 1:T]) # generation injection @ node n & time t (MW)
+@variable(m, p_nmt[1:N, 1:N, 1:T]) # power flow b/w nodes n & m @ time t (MW)
+@variable(m, u_nt[1:N, 1:T]) # voltage @ node n & time t (kV)
 @variable(m, z_n[1:N], Bin) # boolean for building generation site @ node n
 @variable(m, alpha_vnm[1:V, 1:N, 1:N], Int) # dummy variable for linearization
 
@@ -51,7 +51,7 @@ c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 
 @objective(m, Min, links + subs + gens + ops) # define objective function
 
-# # adding constraints
+# adding constraints
 @constraint(m, (g_nt[n,t] - del_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N) for n = 1:N for t = 1:T) == 0)
 # @constraint(m, (p_nmt[n,m,t] for n = 1:N for m = 1:N for t = 1:T if n !=m) ==
 # (sum((alpha_vnm[v,n,m]/r_v[v])*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t] for v = 1:V)))
@@ -62,6 +62,7 @@ c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 # @constraint(m, 0 <= (alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V) <= (A*y_v[v]))
 # @constraint(m, (A*-(1 - y_v[v]) + x_nm[n,m] for n = 1:N for m = 1:N for v = 1:V) <= (alpha_vnm[v,n,m]))
 # @constraint(m, (alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V) <= (x_nm[n,m] + A*(1 - y_v[v])))
+
 #
 # solve(m)
 #
