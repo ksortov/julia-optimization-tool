@@ -1,12 +1,13 @@
-using JuMP, Ipopt, Clp
+using JuMP, Ipopt, Clp, NLopt
 
-m = Model(solver = IpoptSolver()) # define IpoptSolver as solver (placeholder for now)
+M = Model(solver = IpoptSolver()) # define IpoptSolver as solver (placeholder for now)
+#m = Model(solver=NLoptSolver(algorithm=:LD_MMA))
 
 # define sets
 N = 2 # total number of nodes
 T = 3 # largest time value (hour)
 V = 4 # number of possible voltage levels
-L = ones(Int, 4, 4) # array of possible links (L(n,m) = 1 if there is a link b/w n % m)
+L = ones(Int, 4, 4) # array of possible links (L(n,m) = 1 if there is a link b/w n & m)
 A = 100 # large number used for a constraint on the dummy variable
 
 # define parameters
@@ -16,7 +17,7 @@ b_v = ones(Float64, V, 1) # cost of substation @ voltage v ($/MW)
 r_v = ones(Float64, V, 1) # resistance on link for voltage v (ohm/km)
 f_v = ones(Float64, V, 1) # voltage of v (kV)
 p_v = ones(Float64, V, 1) # power capacity of a link @ voltage v (MW)
-del_nt = ones(Float64, N, T) # net power injection @ node n & time t (MW)
+del_nt = zeros(Float64, N, T) # net power injection @ node n & time t (MW)
 lambda_nt = ones(Float64, N, T) # value of energy @ node & time t ($/MWh)
 fmax = 1 # maximum voltage value for nodes (pu)
 fmin = 1 # minimum voltage value for nodes (pu)
@@ -25,37 +26,60 @@ c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 
 
 # define problem variables
-@variable(m, x_nm[1:N, 1:N], Int) # number of parallel lines b/w nodes n & m
-@variable(m, y_v[1:V], Bin) # boolean for selected voltage
-@variable(m, g_nt[1:N, 1:T]) # generation injection @ node n & time t (MW)
-@variable(m, p_nmt[1:N, 1:N, 1:T]) # power flow b/w nodes n & m @ time t (MW)
-@variable(m, u_nt[1:N, 1:T]) # voltage @ node n & time t (kV)
-@variable(m, z_n[1:N], Bin) # boolean for building generation site @ node n
-@variable(m, alpha_vnm[1:V, 1:N, 1:N], Int) # dummy variable for linearization
+@variable(M, x_nm[1:N, 1:N], Int) # number of parallel lines b/w nodes n & m
+@variable(M, y_v[1:V], Bin) # boolean for selected voltage
+@variable(M, g_nt[1:N, 1:T]) # generation injection @ node n & time t (MW)
+@variable(M, p_nmt[1:N, 1:N, 1:T]) # power flow b/w nodes n & m @ time t (MW)
+@variable(M, u_nt[1:N, 1:T]) # voltage @ node n & time t (kV)
+@variable(M, z_n[1:N], Bin) # boolean for building generation site @ node n
+@variable(M, alpha_vnm[1:V, 1:N, 1:N], Int) # dummy variable for linearization
 
 
 # define equations to be used in the objective function
 # capital equations = sum of capital costs for links, substations, generation construction
 
 # cost for links
-@expression(m, links, sum(a_v[v]*p_v[v]*d_nm[n,m]*alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V if n < m))
+@expression(M, links, sum(a_v[v]*p_v[v]*d_nm[n,m]*alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V if n < m))
 
 # cost for substations
-@expression(m, subs, sum(b_v[v]*p_v[v]*y_v[v] for v = 1:V)*sum(x_nm[n,m] for n = 1:N for m = 1:N if n != m))
+@expression(M, subs, sum(b_v[v]*p_v[v]*y_v[v] for v = 1:V)*sum(x_nm[n,m] for n = 1:N for m = 1:N if n != m))
 
 # cost for generation construction
-@expression(m, gens, sum(c_n[n]*z_n[n] for n = 1:N))
+@expression(M, gens, sum(c_n[n]*z_n[n] for n = 1:N))
 
 # operations cost equation
-@expression(m, ops, sum(gamma^t for t = 1:T)*sum(lambda_nt[n,t]*(g_nt[n,t] - del_nt[n,t]) for n = 1:N for t = 1:T))
+@expression(M, ops, sum(gamma^t for t = 1:T)*sum(lambda_nt[n,t]*(g_nt[n,t] - del_nt[n,t]) for n = 1:N for t = 1:T))
 
-@objective(m, Min, links + subs + gens + ops) # define objective function
+@objective(M, Min, links + subs + gens + ops) # define objective function
 
 # adding constraints
-@constraint(m, (g_nt[n,t] - del_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N) for n = 1:N for t = 1:T) == 0)
-# @constraint(m, (p_nmt[n,m,t] for n = 1:N for m = 1:N for t = 1:T if n !=m) ==
-# (sum((alpha_vnm[v,n,m]/r_v[v])*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t] for v = 1:V)))
-# @constraint(m, (-x_nm[n,m]*p_v[v]) <= (p_nmt[n,m,t] for n = 1:N for m = 1:N for v = 1:V for t = 1:t) <= (x_nm[n,m]*p_v[v]))
+for n in 1:N
+    for t in 1:T
+        @constraint(M, (g_nt[n,t] - del_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N)) == 0)
+    end
+end
+
+for n in 1:N
+    for m in 1:N
+        for t in 1:T
+            if n !=m
+                @NLconstraint(M, (p_nmt[n,m,t]) == (sum((alpha_vnm[v,n,m]/r_v[v])*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t] for v = 1:V)))
+            end
+        end
+    end
+end
+
+for n in 1:N
+    for m in 1:N
+        for v in 1:V
+            for t in 1:T
+                if n < m && n < v && n < t
+                    @constraint(M, (-p_v[v]*x_nm[n,m]) <= (p_nmt[n,m,t]) <= (p_v[v]*x_nm[n,m]))
+                end
+            end
+        end
+    end
+end
 # @constraint(m,(y_v[v]*fmin*f_v[v] for v = 1:V) <= (y_v[v]*fmax*f_v[v]))
 # @constraint(m, sum(y_v[v] for v = 1:V) == 1)
 # @constraint(m, (alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V) == (y_v[v]*x_nm[n,m]))
