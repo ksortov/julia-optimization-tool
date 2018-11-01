@@ -1,11 +1,11 @@
 using JuMP, Ipopt, Clp, AmplNLWriter
 
 #M = Model(solver = IpoptSolver()) # define IpoptSolver as solver (placeholder for now)
-M = Model(solver = AmplNLSolver(Ipopt.amplexe, ["print_level=0"]))
+M = Model(solver = AmplNLSolver(Ipopt.amplexe, ["print_level=0 max_cpu_time=30"]))
 
 # define sets
 N = 9 # total number of nodes
-T = 100 # largest time value (hour)
+T = 5 # largest time value (hour)
 V = 4 # number of possible voltage levels
 L = ones(Int, 4, 4) # array of possible links (L(n,m) = 1 if there is a link b/w n & m)
 A = 100 # large number used for a constraint on the dummy variable
@@ -22,7 +22,7 @@ d_nm = [0 112 0 143 175 0 0 0 0
 0 0 0 0 0 0 0 0 218
 0 0 0 0 0 0 0 0 0]
 #a_v = ones(Float64, V, 1) # cost of links ($/MW*km)
-a = 1
+a = 1e6
 #b_v = ones(Float64, V, 1) # cost of substation @ voltage v ($/MW)
 b = 1
 #r_v = ones(Float64, V, 1) # resistance on link for voltage v (ohm/km)
