@@ -1,7 +1,8 @@
-using JuMP, Ipopt, Clp, AmplNLWriter
+using JuMP, Ipopt, Clp, AmplNLWriter, CoinOptServices
 
 #M = Model(solver = IpoptSolver()) # define IpoptSolver as solver (placeholder for now)
-M = Model(solver = AmplNLSolver(Ipopt.amplexe, ["print_level=0 max_cpu_time=30"]))
+#M = Model(solver = AmplNLSolver(Ipopt.amplexe, ["print_level=0 max_cpu_time=30"]))
+M = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design Project/couenne-win64/couenne.exe"))
 
 # define sets
 N = 9 # total number of nodes
@@ -45,7 +46,7 @@ c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 @variable(M, g_nt[1:N, 1:T]) # generation injection @ node n & time t (MW)
 @variable(M, p_nmt[1:N, 1:N, 1:T]) # power flow b/w nodes n & m @ time t (MW)
 @variable(M, u_nt[1:N, 1:T]) # voltage @ node n & time t (kV)
-@variable(M, z_n[1:N], Bin) # boolean for building generation site @ node n
+@variable(M, 0 <= z_n[1:N] <= 1, Int) # boolean for building generation site @ node n
 #@variable(M, alpha_vnm[1:V, 1:N, 1:N], Int) # dummy variable for linearization
 
 
@@ -66,9 +67,18 @@ c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 # operations cost equation
 @expression(M, ops, sum(gamma^t for t = 1:T)*sum(lambda_nt[n,t]*(g_nt[n,t] - del_nt[n,t]) for n = 1:N for t = 1:T))
 
-@objective(M, Min, links + subs + gens + ops) # define objective function
+# sum of all cost functions
+@expression(M, objective, links + subs + gens + ops)
+
+@objective(M, Min, objective) # define objective function
 
 # adding constraints
+# lower bound on x_nm
+for n in 1:N
+    for m in 1:N
+        @constraint(M, x_nm[n,m] >= 0) # lower bound on objective value
+    end
+end
 
 # power balance cnstraint
 for n in 1:N
@@ -108,11 +118,14 @@ for n in 1:N
 end
 
 # voltage bounds constraint
-#for v in 1:V
-    #@constraint(M,(y_v[v]*fmin*f_v[v]) <= (y_v[v]*fmax*f_v[v]))
-    @constraint(M,(fmin*f) <= (fmax*f))
-#end
-
+for n in 1:N
+    for t in 1:T
+        #for v in 1:V
+        #@constraint(M,(y_v[v]*fmin*f_v[v]) <= (y_v[v]*fmax*f_v[v]))
+        @constraint(M, (fmin*f) <= (u_nt[n,t]) <= (fmax*f))
+        #end
+    end
+end
 # logical constraint on y_v
 #@constraint(M, sum(y_v[v] for v = 1:V) == 1)
 
@@ -123,10 +136,12 @@ end
 # @constraint(m, (alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V) <= (x_nm[n,m] + A*(1 - y_v[v])))
 
 
-solve(M)
+solve(M) # solve model
 
+# print results to console
 println("x_nm = ", getvalue(x_nm))
 println("g_nt = ", getvalue(g_nt))
 println("p_nmt = ", getvalue(p_nmt))
 println(" u_nt = ", getvalue(u_nt))
 println(" z_n = ", getvalue(z_n))
+println("Objective value: ", getobjectivevalue(M))
