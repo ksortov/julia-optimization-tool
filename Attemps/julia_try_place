@@ -1,0 +1,34 @@
+# define packages to be used
+ using JuMP
+ using Ipopt
+ using DataFrames
+ using CSV
+
+ my_content ="""Animal,Colour,Cover
+ bunny,white,fur
+ dragon,green,scales
+ cow,brown,fur
+ pigeon,grey,feathers"""
+
+ open("animals.csv", "w") do out_file
+    # write will return the number of bytes written to the file
+    # that's what that 90 is about
+    write(out_file, my_content)
+ end
+ animals = CSV.read("animals.csv")
+ # iris = CSV.read("iris.csv")
+
+ iris=readtable("iris.csv")
+
+ names(iris)
+ names(animals)
+
+ iris_sub = iris[end,2:3]
+ animals_sub = animals[end,3]
+
+ iris_vector=convert(DataFrame, iris[end,2:3])
+ iris_vector
+ iris[:Species]
+ iris_vector_magic=iris[:Sepal_Length]
+
+ iris_vector_magic[2]
