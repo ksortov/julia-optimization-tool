@@ -1,7 +1,7 @@
 using JuMP, Ipopt, Clp, NLopt
 
 M = Model(solver = IpoptSolver()) # define IpoptSolver as solver (placeholder for now)
-#m = Model(solver=NLoptSolver(algorithm=:LD_MMA))
+#M = Model(solver=NLoptSolver(algorithm=:LD_MMA))
 
 # define sets
 N = 2 # total number of nodes
@@ -53,12 +53,16 @@ c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 @objective(M, Min, links + subs + gens + ops) # define objective function
 
 # adding constraints
+
+# power balance cnstraint
 for n in 1:N
     for t in 1:T
         @constraint(M, (g_nt[n,t] - del_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N)) == 0)
     end
 end
 
+
+# power flow in a link constrant
 for n in 1:N
     for m in 1:N
         for t in 1:T
@@ -69,27 +73,37 @@ for n in 1:N
     end
 end
 
+# power flow bounds constraints
 for n in 1:N
     for m in 1:N
         for v in 1:V
             for t in 1:T
                 if n < m && n < v && n < t
-                    @constraint(M, (-p_v[v]*x_nm[n,m]) <= (p_nmt[n,m,t]) <= (p_v[v]*x_nm[n,m]))
+                    @constraint(M, (-p_v[v]*x_nm[n,m]) <= (p_nmt[n,m,t]))
+                    @constraint(M, (p_nmt[n,m,t]) <= (p_v[v]*x_nm[n,m]))
                 end
             end
         end
     end
 end
-# @constraint(m,(y_v[v]*fmin*f_v[v] for v = 1:V) <= (y_v[v]*fmax*f_v[v]))
-# @constraint(m, sum(y_v[v] for v = 1:V) == 1)
-# @constraint(m, (alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V) == (y_v[v]*x_nm[n,m]))
+
+# voltage bounds constraint
+for v in 1:V
+    @constraint(M,(y_v[v]*fmin*f_v[v]) <= (y_v[v]*fmax*f_v[v]))
+end
+
+# logical constraint on y_v
+@constraint(M, sum(y_v[v] for v = 1:V) == 1)
+
+# constarints on dummy alpha variable (not used for now)
+# @constraint(M, (alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V) == (y_v[v]*x_nm[n,m]))
 # @constraint(m, 0 <= (alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V) <= (A*y_v[v]))
 # @constraint(m, (A*-(1 - y_v[v]) + x_nm[n,m] for n = 1:N for m = 1:N for v = 1:V) <= (alpha_vnm[v,n,m]))
 # @constraint(m, (alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V) <= (x_nm[n,m] + A*(1 - y_v[v])))
 
-#
-# solve(m)
-#
-# println("alpha_nm = ", getvalue(x_nm), " y_v = ", getvalue(y_v),
-# " g_nt = ", getvalue(g_nt), " p_nmt = ", getvalue(p_nmt),
-# " u_nt = ", getvalue(u_nt), " z_n = ", getvalue(z_n))
+
+solve(M)
+
+println("x_nm = ", getvalue(x_nm), " y_v = ", getvalue(y_v),
+" g_nt = ", getvalue(g_nt), " p_nmt = ", getvalue(p_nmt),
+" u_nt = ", getvalue(u_nt), " z_n = ", getvalue(z_n))
