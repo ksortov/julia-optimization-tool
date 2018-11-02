@@ -18,7 +18,7 @@
  animals = CSV.read("animals.csv")
  # iris = CSV.read("iris.csv")
 
- iris=readtable("iris.csv")
+ iris=readtable("iris.csv") #This works much better as it takes care of spaces
 
  names(iris)
  names(animals)
@@ -32,3 +32,6 @@
  iris_vector_magic=iris[:Sepal_Length]
 
  iris_vector_magic[2]
+
+ bidon=readtable("CSV-Bidon.csv")
+ bidon_vector_Watts=bidon[:Amps]
