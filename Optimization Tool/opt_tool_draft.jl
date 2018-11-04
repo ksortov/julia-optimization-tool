@@ -1,4 +1,4 @@
-using JuMP, Ipopt, Clp, AmplNLWriter, CoinOptServices
+using JuMP, Ipopt, AmplNLWriter
 
 #M = Model(solver = IpoptSolver()) # define IpoptSolver as solver (placeholder for now)
 #M = Model(solver = AmplNLSolver(Ipopt.amplexe, ["print_level=0 max_cpu_time=30"]))
@@ -25,7 +25,7 @@ d_nm = [0 112 0 143 175 0 0 0 0
 #a_v = ones(Float64, V, 1) # cost of links ($/MW*km)
 a = 1e6
 #b_v = ones(Float64, V, 1) # cost of substation @ voltage v ($/MW)
-b = 1
+b = 1e3
 #r_v = ones(Float64, V, 1) # resistance on link for voltage v (ohm/km)
 r = 0.012
 #f_v = ones(Float64, V, 1) # voltage of v (kV)
@@ -41,45 +41,23 @@ c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 
 
 # define problem variables
-@variable(M, x_nm[1:N, 1:N], Int) # number of parallel lines b/w nodes n & m
+@variable(M, x_nm[1:N, 1:N] >= 0, Int) # number of parallel lines b/w nodes n & m
 #@variable(M, y_v[1:V], Bin) # boolean for selected voltage
-@variable(M, g_nt[1:N, 1:T]) # generation injection @ node n & time t (MW)
-@variable(M, p_nmt[1:N, 1:N, 1:T]) # power flow b/w nodes n & m @ time t (MW)
-@variable(M, u_nt[1:N, 1:T]) # voltage @ node n & time t (kV)
+@variable(M, g_nt[1:N, 1:T] >= 0) # generation injection @ node n & time t (MW)
+@variable(M, p_nmt[1:N, 1:N, 1:T] >= 0) # power flow b/w nodes n & m @ time t (MW)
+@variable(M, u_nt[1:N, 1:T] >= 0) # voltage @ node n & time t (kV)
 @variable(M, 0 <= z_n[1:N] <= 1, Int) # boolean for building generation site @ node n
 #@variable(M, alpha_vnm[1:V, 1:N, 1:N], Int) # dummy variable for linearization
 
+@variable(M, totalCost >= 0) # variable we are minimizing
 
-# define equations to be used in the objective function
-# capital equations = sum of capital costs for links, substations, generation construction
-
-# cost for links
-#@expression(M, links, sum(a_v[v]*p_v[v]*d_nm[n,m]*alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V if n < m))
-@expression(M, links, sum(a*p*d_nm[n,m]*x_nm[n,m] for n = 1:N for m = 1:N if n < m))
-
-# cost for substations
-#@expression(M, subs, sum(b_v[v]*p_v[v]*y_v[v] for v = 1:V)*sum(x_nm[n,m] for n = 1:N for m = 1:N if n != m))
-@expression(M, subs, sum(b*p*x_nm[n,m] for n = 1:N for m = 1:N if n != m))
-
-# cost for generation construction
-@expression(M, gens, sum(c_n[n]*z_n[n] for n = 1:N))
-
-# operations cost equation
-@expression(M, ops, sum(gamma^t for t = 1:T)*sum(lambda_nt[n,t]*(g_nt[n,t] - del_nt[n,t]) for n = 1:N for t = 1:T))
-
-# sum of all cost functions
-@expression(M, objective, links + subs + gens + ops)
-
-@objective(M, Min, objective) # define objective function
+# define objective function to minimize
+@objective(M, Min, sum(a*p*d_nm[n,m]*x_nm[n,m] for n = 1:N for m = 1:N if n < m) # cost of links
++ sum(b*p*x_nm[n,m] for n = 1:N for m = 1:N if n != m) # cost of substations
++ sum(c_n[n]*z_n[n] for n = 1:N) # cost of generation construction
++ sum(gamma^t for t = 1:T)*sum(lambda_nt[n,t]*(g_nt[n,t] - del_nt[n,t]) for n = 1:N for t = 1:T)) # cost of operations
 
 # adding constraints
-# lower bound on x_nm
-for n in 1:N
-    for m in 1:N
-        @constraint(M, x_nm[n,m] >= 0) # lower bound on objective value
-    end
-end
-
 # power balance cnstraint
 for n in 1:N
     for t in 1:T
