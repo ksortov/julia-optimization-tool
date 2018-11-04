@@ -1,4 +1,4 @@
-using JuMP, Ipopt, AmplNLWriter
+using JuMP, Clp, Ipopt, AmplNLWriter
 
 #M = Model(solver = IpoptSolver()) # define IpoptSolver as solver (placeholder for now)
 #M = Model(solver = AmplNLSolver(Ipopt.amplexe, ["print_level=0 max_cpu_time=30"]))
@@ -43,13 +43,11 @@ c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 # define problem variables
 @variable(M, x_nm[1:N, 1:N] >= 0, Int) # number of parallel lines b/w nodes n & m
 #@variable(M, y_v[1:V], Bin) # boolean for selected voltage
-@variable(M, g_nt[1:N, 1:T] >= 0) # generation injection @ node n & time t (MW)
-@variable(M, p_nmt[1:N, 1:N, 1:T] >= 0) # power flow b/w nodes n & m @ time t (MW)
-@variable(M, u_nt[1:N, 1:T] >= 0) # voltage @ node n & time t (kV)
+@variable(M, g_nt[1:N, 1:T] >= 0.0) # generation injection @ node n & time t (MW)
+@variable(M, p_nmt[1:N, 1:N, 1:T] >= 0.0) # power flow b/w nodes n & m @ time t (MW)
+@variable(M, u_nt[1:N, 1:T] >= 0.0) # voltage @ node n & time t (kV)
 @variable(M, 0 <= z_n[1:N] <= 1, Int) # boolean for building generation site @ node n
 #@variable(M, alpha_vnm[1:V, 1:N, 1:N], Int) # dummy variable for linearization
-
-@variable(M, totalCost >= 0) # variable we are minimizing
 
 # define objective function to minimize
 @objective(M, Min, sum(a*p*d_nm[n,m]*x_nm[n,m] for n = 1:N for m = 1:N if n < m) # cost of links
