@@ -39,7 +39,7 @@ for n = 1:N
             del_nt[n,t] = -60
         end
         if n == 2
-            del_nt[n,t] = 20
+            del_nt[n,t] = 0
         end
     end
 end
@@ -56,7 +56,7 @@ for n = 1:N
 end
 fmax = 1.02 # maximum voltage value for nodes (pu)
 fmin = 0.98 # minimum voltage value for nodes (pu)
-gamma = 0.25 # discount rate
+gamma = 1 # discount rate
 c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 
 
@@ -79,7 +79,7 @@ c_n = ones(Float64, N, 1) # cost of adding genration @ node n ($)
 # Power balance constraint
 for n in 1:N
     for t in 1:T
-        @constraint(M, (g_nt[n,t] - del_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N)) == 0)
+        @constraint(M, (g_nt[n,t] - del_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N if n != m)) == 0)
     end
 end
 
