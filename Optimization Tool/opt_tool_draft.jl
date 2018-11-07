@@ -13,15 +13,15 @@ M = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design Project/couenne-w
 
 # Define sets
 N = 2 # total number of nodes
-T = 5 # largest time value (hour)
+T = 7 # largest time value (hour)
 #V = 4 # number of possible voltage levels
 #L = zeros(Int, N, N) # array of possible links (L(n,m) = 1 if there are links b/w n & m)
+L = [0 1; 0 0]
 #A = 100 # large number used for a constraint on the dummy variable
 
 # Define parameters
 #d_nm = ones(Float64, N, N) # distances between nodes n & m (km)
-d_nm = [0 0;
-241 0]
+d_nm = [0 241; 0 0]
 #a_v = ones(Float64, V, 1) # cost of links ($/MW*km)
 a = 1.21e6
 #b_v = ones(Float64, V, 1) # cost of substation @ voltage v ($/MW)
@@ -79,7 +79,7 @@ c_n = zeros(Float64, N, 1) # cost of adding genration @ node n ($)
 # Power balance constraint
 for n in 1:N
     for t in 1:T
-        @constraint(M, (g_nt[n,t] - del_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N if m != n)) == 0)
+        @constraint(M, (g_nt[n,t] - del_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N if n < m)) == 0)
     end
 end
 
@@ -91,6 +91,7 @@ for n in 1:N
             if n != m
                 #@NLconstraint(M, (p_nmt[n,m,t]) == (sum((alpha_vnm[v,n,m]/r_v[v])*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t] for v = 1:V)))
                 @NLconstraint(M, (p_nmt[n,m,t]) == ((x_nm[n,m]/r)*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t]))
+                @constraint(M, (p_nmt[m,n,t]) + (p_nmt[n,m,t]) == 0)
             end
         end
     end
@@ -101,8 +102,8 @@ for n in 1:N
     for m in 1:N
         #for v in 1:V
             for t in 1:T
-                #if n < m && n < v && n < t
-                if n < m
+                #if n < m
+                if  n < m
                     #@constraint(M, (-p_v[v]*x_nm[n,m]) <= (p_nmt[n,m,t]))
                     #@constraint(M, (p_nmt[n,m,t]) <= (p_v[v]*x_nm[n,m]))
                     @constraint(M, (-p*x_nm[n,m]) <= (p_nmt[n,m,t]))
