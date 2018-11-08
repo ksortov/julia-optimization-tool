@@ -32,14 +32,14 @@ r = 0.009
 f = 500
 #p_v = ones(Float64, V, 1) # power capacity of a link @ voltage v (MW)
 p = 2407
-del_nt = zeros(Float64, N, T) # net power injection @ node n & time t (MW)
+dem_nt = zeros(Float64, N, T) # power demand @ node n & time t (MW)
 for n = 1:N
     for t = 1:T
         if n == 1
-            del_nt[n,t] = -60
+            dem_nt[n,t] = 60
         end
         if n == 2
-            del_nt[n,t] = 0
+            dem_nt[n,t] = 1
         end
     end
 end
@@ -62,7 +62,8 @@ c_n = zeros(Float64, N, 1) # cost of adding genration @ node n ($)
 # Define problem variables
 @variable(M, 0 <= x_nm[1:N, 1:N] <= 3, Int) # number of parallel lines b/w nodes n & m
 #@variable(M, y_v[1:V], Bin) # boolean for selected voltage
-@variable(M, g_nt[1:N, 1:T] >= 0.0) # generation injection @ node n & time t (MW)
+@variable(M, g_nt[1:N, 1:T] >= 0.0) # generation injection @ node n & time t from new generation construction (MW)
+@variable(M, del_nt[1:N, 1:T] >= 0.0) # power injection @ node n & time t without new generation construction (MW)
 @variable(M, p_nmt[1:N, 1:N, 1:T]) # power flow b/w nodes n & m @ time t (MW)
 @variable(M, u_nt[1:N, 1:T]) # voltage @ node n & time t (kV)
 @variable(M, 0 <= z_n[1:N] <= 1, Int) # boolean for building generation site @ node n
@@ -78,8 +79,10 @@ c_n = zeros(Float64, N, 1) # cost of adding genration @ node n ($)
 # Power balance constraint
 for n in 1:N
     for t in 1:T
-        @constraint(M, (g_nt[n,t] + del_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N if (L[n,m] == 1 || L[m,n] == 1))) == 0)
+        @constraint(M, (g_nt[n,t] + del_nt[n,t] - dem_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N if (L[n,m] == 1 || L[m,n] == 1))) == 0)
         @constraint(M, g_nt[1,t] == 0)
+        @constraint(M, g_nt[2,t] == 0)
+        @constraint(M, del_nt[1,t] == 0)
     end
 end
 
@@ -88,10 +91,10 @@ end
 for n in 1:N
     for m in 1:N
         for t in 1:T
-            if L[n,m] == 1
+            if L[n,m] == 1 || L[m,n] == 1
                 #@NLconstraint(M, (p_nmt[n,m,t]) == (sum((alpha_vnm[v,n,m]/r_v[v])*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t] for v = 1:V)))
                 @NLconstraint(M, (p_nmt[n,m,t]) == ((x_nm[n,m]/r)*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t]))
-                @constraint(M, (p_nmt[m,n,t]) + (p_nmt[n,m,t]) == 0)
+                @NLconstraint(M, (p_nmt[m,n,t]) + (p_nmt[n,m,t]) == 0)
             end
         end
     end
@@ -150,6 +153,7 @@ solve(M) # solve model
 # Print results to console
 println("x_nm = ", getvalue(x_nm))
 println("g_nt = ", getvalue(g_nt))
+println("del_nt = ", getvalue(del_nt))
 println("p_nmt = ", getvalue(p_nmt))
 println("u_nt = ", getvalue(u_nt)/f)
 println("z_n = ", getvalue(z_n))
