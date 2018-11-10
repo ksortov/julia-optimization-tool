@@ -16,7 +16,7 @@ N = 2 # total number of nodes
 T = 7 # largest time value (hour)
 #V = 4 # number of possible voltage levels
 #L = zeros(Int, N, N) # array of possible links (L(n,m) = 1 if there are links b/w n & m)
-L = [0 1; 0 0]
+L = [0 1; 1 0]
 #A = 100 # large number used for a constraint on the dummy variable
 
 # Define parameters
@@ -39,7 +39,7 @@ for n = 1:N
             dem_nt[n,t] = 60
         end
         if n == 2
-            dem_nt[n,t] = 1
+            dem_nt[n,t] = 0
         end
     end
 end
@@ -73,16 +73,28 @@ c_n = zeros(Float64, N, 1) # cost of adding genration @ node n ($)
 @objective(M, Min, sum(a*p*d_nm[n,m]*x_nm[n,m] for n = 1:N for m = 1:N if n < m) # cost of links
 + sum(b*p*x_nm[n,m] for n = 1:N for m = 1:N if n != m) # cost of substations
 + sum(c_n[n]*z_n[n] for n = 1:N) # cost of generation construction
-+ sum(gamma^t for t = 1:T)*sum(lambda_nt[n,t]*(g_nt[n,t] - del_nt[n,t]) for n = 1:N for t = 1:T)) # cost of operations
++ sum(gamma^t for t = 1:T)*sum(lambda_nt[n,t]*(g_nt[n,t] + del_nt[n,t]) for n = 1:N for t = 1:T)) # cost of operations
 
 # Add constraints
+
+# Logical constraint on g_nt and z_n
+for n in 1:N
+    for t in 1:T
+        if z_n[n] == 0
+            @constraint(M, g_nt[n,t] == 0)
+        else
+            @constraint(M, g_nt[n,t] >= 1)
+        end
+    end
+end
+
 # Power balance constraint
 for n in 1:N
     for t in 1:T
-        @constraint(M, (g_nt[n,t] + del_nt[n,t] - dem_nt[n,t] - sum(p_nmt[n,m,t] for m = 1:N if (L[n,m] == 1 || L[m,n] == 1))) == 0)
+        @constraint(M, (g_nt[n,t] + del_nt[n,t] - dem_nt[n,t] == sum(p_nmt[n,m,t] for m = 1:N if L[n,m] == 1 && n != m)))
         @constraint(M, g_nt[1,t] == 0)
         @constraint(M, g_nt[2,t] == 0)
-        @constraint(M, del_nt[1,t] == 0)
+        #@constraint(M, del_nt[1,t] == 0)
     end
 end
 
@@ -91,10 +103,10 @@ end
 for n in 1:N
     for m in 1:N
         for t in 1:T
-            if L[n,m] == 1 || L[m,n] == 1
+            if L[n,m] == 1
                 #@NLconstraint(M, (p_nmt[n,m,t]) == (sum((alpha_vnm[v,n,m]/r_v[v])*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t] for v = 1:V)))
                 @NLconstraint(M, (p_nmt[n,m,t]) == ((x_nm[n,m]/r)*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t]))
-                @NLconstraint(M, (p_nmt[m,n,t]) + (p_nmt[n,m,t]) == 0)
+                #@constraint(M, (p_nmt[m,n,t]) + (p_nmt[n,m,t]) == 0)
             end
         end
     end
@@ -110,6 +122,9 @@ for n in 1:N
                     #@constraint(M, (p_nmt[n,m,t]) <= (p_v[v]*x_nm[n,m]))
                     @constraint(M, (-p*x_nm[n,m]) <= (p_nmt[n,m,t]))
                     @constraint(M, (p_nmt[n,m,t]) <= (p*x_nm[n,m]))
+                elseif n == m
+                    @constraint(M, x_nm[n,m] == 0) # No links between same node
+                    @constraint(M, p_nmt[n,m,t] == 0) # No power flow between same node
                 end
             end
         #end
@@ -123,18 +138,6 @@ for n in 1:N
         #@constraint(M,(y_v[v]*fmin*f_v[v]) <= (y_v[v]*fmax*f_v[v]))
         @constraint(M, (fmin*f) <= (u_nt[n,t]) <= (fmax*f))
         #end
-    end
-end
-
-# No links or power flow within same nodes
-for n in 1:N
-    for m in 1:N
-        for t in 1:T
-            if n == m
-                @constraint(M, x_nm[n,m] == 0)
-                @constraint(M, p_nmt[n,m,t] == 0)
-            end
-        end
     end
 end
 
