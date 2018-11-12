@@ -82,7 +82,8 @@ end)
 # Power balance at a node constraint
 for n in 1:N
     for t in 1:T
-        @constraint(M, (del_nt[n,t] - dem_nt[n,t] == sum(p_nmt[n,m,t] for m in 1:N if n != m)))
+        @constraint(M, (del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if L[n,m] == 1 || L[m,n] == 1)))
+        @constraint(M, del_nt[1,t] == 0.0)
     end
 end
 
@@ -91,10 +92,10 @@ end
 for n in 1:N
     for m in 1:N
         for t in 1:T
-            if n != m
+            if L[n,m] == 1
                 #@NLconstraint(M, (p_nmt[n,m,t]) == (sum((alpha_vnm[v,n,m]/r_v[v])*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t] for v = 1:V)))
                 @NLconstraint(M, (p_nmt[n,m,t]) == ((x_nm[n,m]/r)*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t]))
-                #@constraint(M, (p_nmt[m,n,t]) + (p_nmt[n,m,t]) == 0)
+                @constraint(M, (p_nmt[m,n,t]) + (p_nmt[n,m,t]) == 0)
             end
         end
     end
@@ -105,11 +106,11 @@ for n in 1:N
     for m in 1:N
         #for v in 1:V
             for t in 1:T
-                if n != m
+                if L[n,m] == 1 || L[m,n] == 1
                     #@constraint(M, (-p_v[v]*x_nm[n,m]) <= (p_nmt[n,m,t]))
                     #@constraint(M, (p_nmt[n,m,t]) <= (p_v[v]*x_nm[n,m]))
                     @constraint(M, (-p*x_nm[n,m]) <= (p_nmt[n,m,t]))
-                    @constraint(M, (p_nmt[n,m,t]) <= (p*x_nm[n,m]))
+                    @constraint(M, (p*x_nm[n,m]) >= (p_nmt[n,m,t]))
                 elseif n == m
                     @constraint(M, x_nm[n,m] == 0) # No links between same node
                     @constraint(M, p_nmt[n,m,t] == 0) # No power flow between same node
@@ -144,8 +145,8 @@ solve(M) # solve model
 # Print results to console
 println("x_nm = ", getvalue(x_nm))
 #println("g_nt = ", getvalue(g_nt))
-#println("del_nt = ", getvalue(del_nt))
-#println("p_nmt = ", getvalue(p_nmt))
+println("del_nt = ", getvalue(del_nt))
+println("p_nmt = ", getvalue(p_nmt))
 #println("u_nt = ", getvalue(u_nt)/f)
 #println("z_n = ", getvalue(z_n))
 println("Objective value = ", getobjectivevalue(M))
