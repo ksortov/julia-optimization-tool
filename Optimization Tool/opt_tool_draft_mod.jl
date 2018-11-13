@@ -9,14 +9,14 @@ using JuMP, Clp, Ipopt, AmplNLWriter
 # Currently using Couenne as it can handle nonlinear, mixed-integer problems
 #M = Model(solver = IpoptSolver()) # define IpoptSolver as solver (placeholder for now)
 #M = Model(solver = AmplNLSolver(Ipopt.amplexe, ["print_level=0 max_cpu_time=30"]))
-M = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design Project/couenne-win64/couenne.exe"))
+M = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/couenne-win64/couenne.exe"))
 
 # Define sets
 N = 2 # total number of nodes
-T = 7 # largest time value (hour)
+T = 10 # largest time value (hour)
 #V = 4 # number of possible voltage levels
 #L = zeros(Int, N, N) # array of possible links (L(n,m) = 1 if there are links b/w n & m)
-L = [0 1; 0 0]
+L = [0 1; 1 0]
 #A = 100 # large number used for a constraint on the dummy variable
 
 # Define parameters
@@ -56,7 +56,7 @@ for n = 1:N
 end
 fmax = 1.05 # maximum voltage value for nodes (pu)
 fmin = 0.95 # minimum voltage value for nodes (pu)
-gamma = 0.0175 # discount rate
+gamma = 0.1 # discount rate
 #c_n = 1e20*ones(Float64, N, 1) # cost of adding genration @ node n ($)
 
 # Define problem variables
@@ -82,7 +82,7 @@ end)
 # Power balance at a node constraint
 for n in 1:N
     for t in 1:T
-        @constraint(M, (del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if L[n,m] == 1 || L[m,n] == 1)))
+        @constraint(M, (del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if L[n,m] == 1)))
         @constraint(M, del_nt[1,t] == 0.0)
     end
 end
@@ -95,7 +95,6 @@ for n in 1:N
             if L[n,m] == 1
                 #@NLconstraint(M, (p_nmt[n,m,t]) == (sum((alpha_vnm[v,n,m]/r_v[v])*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t] for v = 1:V)))
                 @NLconstraint(M, (p_nmt[n,m,t]) == ((x_nm[n,m]/r)*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t]))
-                @constraint(M, (p_nmt[m,n,t]) + (p_nmt[n,m,t]) == 0)
             end
         end
     end
@@ -106,12 +105,13 @@ for n in 1:N
     for m in 1:N
         #for v in 1:V
             for t in 1:T
-                if L[n,m] == 1 || L[m,n] == 1
+                if L[n,m] == 1
                     #@constraint(M, (-p_v[v]*x_nm[n,m]) <= (p_nmt[n,m,t]))
                     #@constraint(M, (p_nmt[n,m,t]) <= (p_v[v]*x_nm[n,m]))
                     @constraint(M, (-p*x_nm[n,m]) <= (p_nmt[n,m,t]))
-                    @constraint(M, (p*x_nm[n,m]) >= (p_nmt[n,m,t]))
-                elseif n == m
+                    @constraint(M, (p_nmt[n,m,t]) <= (p*x_nm[n,m]))
+                    @constraint(M, x_nm[m,n] == x_nm[n,m])
+                else#if n == m
                     @constraint(M, x_nm[n,m] == 0) # No links between same node
                     @constraint(M, p_nmt[n,m,t] == 0) # No power flow between same node
                 end
@@ -140,7 +140,7 @@ end
 # @constraint(m, (alpha_vnm[v,n,m] for n = 1:N for m = 1:N for v = 1:V) <= (x_nm[n,m] + A*(1 - y_v[v])))
 
 
-solve(M) # solve model
+status = solve(M) # solve model
 
 # Print results to console
 println("x_nm = ", getvalue(x_nm))
