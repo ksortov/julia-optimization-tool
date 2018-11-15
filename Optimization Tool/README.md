@@ -1,9 +1,9 @@
-# Julia Optimization Tool Utlization Guidelines
+# Julia Optimization Tool Utilization Guidelines
 The following is a list of packages used in the tool (to be added using the Pkg.add("") command in the Julia console):
 - JuMP
 - Ipopt
 - Clp
-- AmplNLWriters
+- AmplNLWriter
 
 The following is a guide on how to use Couenne, the utilized solver:
 - The solver executable are located in the couenne-win64 directory for windows and couenne-osx for macOS
