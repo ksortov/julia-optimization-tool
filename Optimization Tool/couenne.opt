@@ -24,7 +24,7 @@
 # on how the options are used.
 
 # time limit seeting (10s for 10 hours)
-time_limit 20
+time_limit 2100
 
 #
 # Verbosity/output level options
@@ -253,7 +253,7 @@ convexification_cuts 1
 # Specify the number of points at which to convexify when
 # convexification type.
 
-convexification_points 4
+convexification_points 2
 
 
 # Yes if only violated convexification cuts should be added
