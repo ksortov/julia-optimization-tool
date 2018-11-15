@@ -24,7 +24,7 @@
 # on how the options are used.
 
 # time limit seeting (10s for 10 hours)
-time_limit 1500
+time_limit 1800
 
 #
 # Verbosity/output level options
@@ -233,7 +233,7 @@ aggressive_fbbt yes
 #
 # A parameter analogous to what log_num_obbt_per_level is for OBBT.
 
-log_num_abt_per_level 3
+log_num_abt_per_level 1
 
 
 #
@@ -303,7 +303,7 @@ local_optimization_heuristic yes
 # calls to the nonlinear solver happen with probability inversely
 # proportional to the depth of the node.
 
-log_num_local_optimization_per_level 2
+log_num_local_optimization_per_level 1
 
 
 # Tolerance for constraints/auxiliary variables
