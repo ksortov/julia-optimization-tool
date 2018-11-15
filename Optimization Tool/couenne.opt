@@ -23,7 +23,8 @@
 # We refer the curious user of Couenne to this paper for more insight
 # on how the options are used.
 
-time_limit 240
+# time limit seeting (10s for 10 hours)
+time_limit 1500
 
 #
 # Verbosity/output level options
@@ -228,12 +229,11 @@ log_num_obbt_per_level 1
 
 aggressive_fbbt yes
 
-
 # Specify the frequency (in terms of nodes) for aggressive bound tightening.
 #
 # A parameter analogous to what log_num_obbt_per_level is for OBBT.
 
-log_num_abt_per_level 2
+log_num_abt_per_level 3
 
 
 #
@@ -275,7 +275,7 @@ violated_cuts_only yes
 # Artificial cutoff. Used when you know a feasible solution and want
 # to use it to restrict the solution space
 
-#art_cutoff 1e20
+#art_cutoff 1e15
 
 # Window around known optimum
 #opt_window
