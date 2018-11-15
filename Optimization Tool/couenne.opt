@@ -24,7 +24,7 @@
 # on how the options are used.
 
 # time limit seeting (10s for 10 hours)
-time_limit 1800
+time_limit 20
 
 #
 # Verbosity/output level options

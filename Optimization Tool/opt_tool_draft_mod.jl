@@ -9,11 +9,11 @@ using JuMP, Clp, Ipopt, AmplNLWriter
 # Currently using Couenne as it can handle nonlinear, mixed-integer problems
 #M = Model(solver = IpoptSolver()) # define IpoptSolver as solver (placeholder for now)
 #M = Model(solver = AmplNLSolver(Ipopt.amplexe, ["print_level=0 max_cpu_time=30"]))
-M = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/couenne-win64/couenne.exe"))
+M = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/couenne-win64/couenne.exe"))
 
 # Define sets
 N = 2 # total number of nodes
-T = 1000 # largest time value (hour)
+T = 10 # largest time value (hour)
 #V = 4 # number of possible voltage levels
 #L = zeros(Int, N, N) # array of possible links (L(n,m) = 1 if there are links b/w n & m)
 L = [0 1; 1 0]
