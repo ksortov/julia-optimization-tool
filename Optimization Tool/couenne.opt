@@ -24,7 +24,7 @@
 # on how the options are used.
 
 # time limit seeting (10s for 10 hours)
-time_limit 2100
+time_limit 3600
 
 #
 # Verbosity/output level options
@@ -71,7 +71,7 @@ pseudocost_mult interval_br_rev
 # pseudocosts. Can give a better estimate of the change in the node as
 # a result of the branching rule.
 
-pseudocost_mult_lp no
+pseudocost_mult_lp yes
 
 
 # Use Special Ordered Sets (SOS) as indicated in the MINLP
@@ -101,7 +101,7 @@ branch_fbbt yes
 # branching (note: does not work when performing the real branching
 # rule)
 
-branch_conv_cuts yes
+branch_conv_cuts no
 
 
 # Chooses branching point selection strategy
@@ -227,7 +227,7 @@ log_num_obbt_per_level 1
 # See the paper for a detailed explanation. This is also an expensive
 # but efficient way to reduce the solution set
 
-aggressive_fbbt yes
+aggressive_fbbt no
 
 # Specify the frequency (in terms of nodes) for aggressive bound tightening.
 #
@@ -247,13 +247,13 @@ log_num_abt_per_level 1
 # A default value of 1 has linearization inequalities generated at
 # every node.
 
-convexification_cuts 1
+convexification_cuts 3
 
 
 # Specify the number of points at which to convexify when
 # convexification type.
 
-convexification_points 2
+convexification_points 3
 
 
 # Yes if only violated convexification cuts should be added
@@ -281,7 +281,7 @@ violated_cuts_only yes
 #opt_window
 
 # Artificial lower bound
-art_lower 0
+#art_lower 0
 
 
 #
@@ -303,7 +303,7 @@ local_optimization_heuristic yes
 # calls to the nonlinear solver happen with probability inversely
 # proportional to the depth of the node.
 
-log_num_local_optimization_per_level 1
+log_num_local_optimization_per_level 3
 
 
 # Tolerance for constraints/auxiliary variables

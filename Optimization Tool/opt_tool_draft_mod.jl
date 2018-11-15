@@ -13,7 +13,7 @@ M = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-opt
 
 # Define sets
 N = 2 # total number of nodes
-T = 1000 # largest time value (hour)
+T = 8760 # largest time value (hour)
 #V = 4 # number of possible voltage levels
 #L = zeros(Int, N, N) # array of possible links (L(n,m) = 1 if there are links b/w n & m)
 L = [0 1; 1 0]
@@ -145,8 +145,8 @@ status = solve(M) # solve model
 # Print results to console
 println("x_nm = ", getvalue(x_nm))
 #println("g_nt = ", getvalue(g_nt))
-println("del_nt = ", getvalue(del_nt))
-println("p_nmt = ", getvalue(p_nmt))
+#println("del_nt = ", getvalue(del_nt))
+#println("p_nmt = ", getvalue(p_nmt))
 #println("u_nt = ", getvalue(u_nt)/f)
 #println("z_n = ", getvalue(z_n))
 println("Objective value = ", getobjectivevalue(M))
