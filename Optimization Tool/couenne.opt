@@ -23,8 +23,8 @@
 # We refer the curious user of Couenne to this paper for more insight
 # on how the options are used.
 
-# time limit seeting (10s for 10 hours)
-time_limit 3600
+# cpu time limit seeting
+time_limit 3000 # 3000 for 8760 hours (depends on machine performance)
 
 #
 # Verbosity/output level options
@@ -101,7 +101,7 @@ branch_fbbt yes
 # branching (note: does not work when performing the real branching
 # rule)
 
-branch_conv_cuts no
+branch_conv_cuts yes
 
 
 # Chooses branching point selection strategy
@@ -163,7 +163,7 @@ branch_pt_select mid-point
 # branching. Experimentally, Violation Transfer appears slightly
 # better, hence it is preferred by default.
 
-red_cost_branching no
+red_cost_branching yes
 
 
 # Type of branching object for variable selection
@@ -182,7 +182,7 @@ red_cost_branching no
 #   var_obj   use one object for each variable
 #   expr_obj  use one object for each nonlinear expression
 
-branching_object var_obj
+branching_object vt_obj
 
 
 
@@ -207,7 +207,7 @@ feasibility_bt yes
 # that FBBT, but much more computationally intensive. Recommended
 # for small problems. See also the next option.
 
-optimality_bt yes
+optimality_bt no
 
 
 # Specify the frequency (in terms of nodes) for optimality-based bound
@@ -303,7 +303,7 @@ local_optimization_heuristic yes
 # calls to the nonlinear solver happen with probability inversely
 # proportional to the depth of the node.
 
-log_num_local_optimization_per_level 3
+log_num_local_optimization_per_level 1
 
 
 # Tolerance for constraints/auxiliary variables
