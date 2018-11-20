@@ -24,7 +24,7 @@
 # on how the options are used.
 
 # cpu time limit seeting
-time_limit 3000 # 3000 for 8760 hours (depends on machine performance)
+time_limit 5 # 3000 for 8760 hours (depends on machine performance)
 
 #
 # Verbosity/output level options
