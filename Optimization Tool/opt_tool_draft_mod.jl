@@ -11,6 +11,10 @@ using JuMP, Clp, Ipopt, AmplNLWriter
 #M = Model(solver = AmplNLSolver(Ipopt.amplexe, ["print_level=0 max_cpu_time=30"]))
 M = Model(solver = AmplNLSolver("/Users/Antoine/Downloads/couenne-osx/couenne"))
 
+#Import data from csv file
+
+#All numbers in parameters and sets except time T
+
 # Define sets
 N = 2 # total number of nodes
 T = 10 # largest time value (hour)
@@ -36,10 +40,10 @@ dem_nt = zeros(Float64, N, T) # power demand @ node n & time t (MW)
 for n = 1:N
     for t = 1:T
         if n == 1
-            dem_nt[n,t] = 60
+            dem_nt[n,t] = 60    #HERE
         end
         if n == 2
-            dem_nt[n,t] = 0
+            dem_nt[n,t] = 1     #HERE, might want any other random number
         end
     end
 end
@@ -47,10 +51,10 @@ lambda_nt = zeros(Float64, N, T) # value of energy @ node & time t ($/MWh)
 for n = 1:N
     for t = 1:T
         if n == 1
-            lambda_nt[n,t] = 12
+            lambda_nt[n,t] = 12 #HERE
         end
         if n == 2
-            lambda_nt[n,t] = 7
+            lambda_nt[n,t] = 7  #HERE
         end
     end
 end
@@ -145,8 +149,8 @@ status = solve(M) # solve model
 # Print results to console
 println("x_nm = ", getvalue(x_nm))
 #println("g_nt = ", getvalue(g_nt))
-#println("del_nt = ", getvalue(del_nt))
-#println("p_nmt = ", getvalue(p_nmt))
-#println("u_nt = ", getvalue(u_nt)/f)
+println("del_nt = ", getvalue(del_nt))
+println("p_nmt = ", getvalue(p_nmt))
+println("u_nt = ", getvalue(u_nt)/f)
 #println("z_n = ", getvalue(z_n))
 println("Objective value = ", getobjectivevalue(M))
