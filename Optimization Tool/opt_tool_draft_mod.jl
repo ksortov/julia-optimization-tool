@@ -92,7 +92,7 @@ for n in 1:N
 end
 
 
-# Power flow in a link constrant
+# Power flow in a link constraint
 for n in 1:N
     for m in 1:N
         for t in 1:T
