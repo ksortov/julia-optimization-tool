@@ -108,7 +108,7 @@ for n in 1:N
     for m in 1:N
         for t in 1:T
             if L[n,m] == 1
-                @constraint(mod, sum(-p_v[v]*x_nm[n,m] for v in 1:V) <= (p_nmt[n,m,t])) # lower bound
+                @constraint(mod, (p_nmt[n,m,t]) >= sum(-p_v[v]*x_nm[n,m] for v in 1:V)) # lower bound
                 @constraint(mod, (p_nmt[n,m,t]) <= sum(p_v[v]*x_nm[n,m] for v in 1:V)) # upper bound
                 @constraint(mod, x_nm[m,n] == x_nm[n,m]) # links b/w n&m = links b/w m&n
             elseif n == m
