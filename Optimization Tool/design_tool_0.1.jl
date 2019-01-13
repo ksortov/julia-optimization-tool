@@ -138,11 +138,16 @@ for v in 1:V
             @NLconstraint(mod, (alpha_vnm[v,n,m]) == (y_v[v]*x_nm[n,m])) # alpha is the product of links and selected voltage boolean
             @constraint(mod, (alpha_vnm[v,n,m]) >= 0) # minimum value is 0
             @constraint(mod, (alpha_vnm[v,n,m]) <= (A*y_v[v])) # maximum value is a large number
-            @constraint(mod, (alpha_vnm[v,n,m]) >= (A*-(1 - y_v[v]) + x_nm[n,m])) # these two last constranits ensure that alphga
+            @constraint(mod, (alpha_vnm[v,n,m]) >= (A*-(1 - y_v[v]) + x_nm[n,m])) # these two last constranits ensure that alpha
             @constraint(mod, (alpha_vnm[v,n,m]) <= (x_nm[n,m] + A*(1 - y_v[v])))  # actually takes on the value of x_nm (links)
         end
     end
 end
+
+# N-1 criterion
+#for n in 1:N
+#    @constraint(mod, sum(x_nm[1,m] for m in 2:N) >= 2)
+#end
 
 status = solve(mod) # solve model
 
