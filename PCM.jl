@@ -33,12 +33,12 @@ ed=Model(solver = ClpSolver())
 # Define decision variables
 @variable(ed, 0 <= g[1:N, 1:T] <= g_max[i]) # power output of generators
 @variable(ed, 0 <= w[1:T]  <= w_f ) # wind power injection
+@variable(ed, C_h[1:T])#cost at every hour
 
 
 # Define the objective function
-for t in 1:T
-    @objective(ed,Min,sum(c_g[i] * g[i,t] for i=1:N)+ c_w * w[t])
-end
+@objective(ed,Min,sum(c_g[i] * g[i,t] + c_w * w[t] for i=1:N for t=1:T))
+
 
 # Define the constraint on the maximum and minimum power output of each generator
 for i in 1:N
@@ -46,6 +46,10 @@ for i in 1:N
         @constraint(ed,  g[i,t] <= g_max[i]) #maximum
         @constraint(ed,  g[i,t] >= g_min[i]) #minimum
     end
+end
+
+for t in 1:T
+    @constraint(ed, C_h[t]==sum(c_g[i] * g[i,t] for i=1:N)+ c_w * w[t])
 end
 
 # Define the constraint on the wind power injection
@@ -67,13 +71,14 @@ solve(ed)
 g_opt=getValue(g)
 w_opt=getValue(w)
 ws_opt=w_f-getValue(w)
+Ch_opt=getValue(C_h)
 obj=getObjectiveValue(ed)
 
-#(g_opt,w_opt,ws_opt,obj) = solve_ed(g_max, g_min, c_g, c_w, d, w_f);
 
 println("\n")
 println("Dispatch of Generators: ", g_opt, " MW")
 println("Dispatch of Wind: ", w_opt, " MW")
 println("Wind spillage: ", w_f-w_opt, " MW")
 println("\n")
+println("Hourly cost: ", Ch_opt, " \$")
 println("Total cost: ", obj, "\$")
