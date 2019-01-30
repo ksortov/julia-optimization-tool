@@ -20,21 +20,28 @@ const w_f = 200;
 #Largest time value
 const T=10;
 
+#Number of Generators
+N=2;
+
 #Total demand at every hour
 dem=[300, 500, 700, 900, 1100, 1300, 1500, 1400, 1300, 1200];
 
 #Define the economic dispatch (ED) model
 ed=Model(solver = ClpSolver())
 
+
 # Define decision variables
-@variable(ed, 0 <= g[i=1:2 t=1:T] <= g_max[i]) # power output of generators
-@variable(ed, 0 <= w  <= w_f ) # wind power injection
+@variable(ed, 0 <= g[1:N, 1:T] <= g_max[i]) # power output of generators
+@variable(ed, 0 <= w[1:T]  <= w_f ) # wind power injection
+
 
 # Define the objective function
-@objective(ed,Min,sum(c_g[i,t] * g[i,t] for i=1:2 for t in 1:T)+ c_w * w)
+for t in 1:T
+    @objective(ed,Min,sum(c_g[i] * g[i,t] for i=1:N)+ c_w * w[t])
+end
 
 # Define the constraint on the maximum and minimum power output of each generator
-for i in 1:2
+for i in 1:N
     for t in 1:T
         @constraint(ed,  g[i,t] <= g_max[i]) #maximum
         @constraint(ed,  g[i,t] >= g_min[i]) #minimum
@@ -42,11 +49,13 @@ for i in 1:2
 end
 
 # Define the constraint on the wind power injection
-@constraint(ed, w <= w_f)
+for t in 1:T
+    @constraint(ed, w[t] <= w_f)
+end
 
 # Define the power balance constraint
-for t in 1:T
-    @constraint(ed, sum(g[i,t] for i=1:2) + w == dem[t])
+for t=1:T
+    @constraint(ed, sum(g[i,t] for i=1:N) + w[t] == dem[t])
 end
 
 # Solve statement
@@ -63,7 +72,7 @@ obj=getObjectiveValue(ed)
 #(g_opt,w_opt,ws_opt,obj) = solve_ed(g_max, g_min, c_g, c_w, d, w_f);
 
 println("\n")
-println("Dispatch of Generators: ", g_opt[i=1:2,t], " MW")
+println("Dispatch of Generators: ", g_opt, " MW")
 println("Dispatch of Wind: ", w_opt, " MW")
 println("Wind spillage: ", w_f-w_opt, " MW")
 println("\n")
