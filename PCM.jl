@@ -49,7 +49,7 @@ for i in 1:N
 end
 
 for t in 1:T
-    @constraint(ed, C_h[t]==sum(c_g[i] * g[i,t] for i=1:N)+ c_w * w[t])
+    @constraint(ed, C_h[t]==sum(c_g[i] * g[i,t] + c_w * w[t] for i=1:N))
 end
 
 # Define the constraint on the wind power injection
@@ -59,7 +59,7 @@ end
 
 # Define the power balance constraint
 for t=1:T
-    @constraint(ed, sum(g[i,t] for i=1:N) + w[t] == dem[t])
+    @constraint(ed, (sum(g[i,t] for i=1:N) + w[t]) == dem[t])
 end
 
 # Solve statement

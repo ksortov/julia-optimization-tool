@@ -36,3 +36,10 @@
 
  bidon=readtable("CSV-Bidon.csv")
  bidon_vector_Watts=bidon[:Amps]
+
+
+
+t=[1, 2, 3, 4, 5];
+i=[1, 2]
+
+sum(c_g[i] * g[i,t] + c_w * w[t] for i=1:N for t=1:T)
