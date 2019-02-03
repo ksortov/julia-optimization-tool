@@ -23,62 +23,60 @@ const T=10;
 #Number of Generators
 N=2;
 
+#Number of wind turbines
+M=1;
+
 #Total demand at every hour
 dem=[300, 500, 700, 900, 1100, 1300, 1500, 1400, 1300, 1200];
 
-#Define the economic dispatch (ED) model
-ed=Model(solver = ClpSolver())
+for t in 1:2
 
+    de=dem[t];
 
-# Define decision variables
-@variable(ed, 0 <= g[1:N, 1:T] <= g_max[i]) # power output of generators
-@variable(ed, 0 <= w[1:T]  <= w_f ) # wind power injection
-@variable(ed, C_h[1:T])#cost at every hour
+    #Define the economic dispatch (ED) model
+    ed=Model(solver = ClpSolver())
 
+    # Define decision variables
+    @variable(ed, 0 <= g[1:N] <= g_max[i]) # power output of generators
+    @variable(ed, 0 <= w[1:M]  <= w_f ) # wind power injection
 
-# Define the objective function
-@objective(ed,Min,sum(c_g[i] * g[i,t] + c_w * w[t] for i=1:N for t=1:T))
+    # Define the objective function
+    @objective(ed,Min,sum(c_g[i] * g[i] for i=1:N) + sum(c_w[j] * w[j] for j=1:M))
 
-
-# Define the constraint on the maximum and minimum power output of each generator
-for i in 1:N
-    for t in 1:T
-        @constraint(ed,  g[i,t] <= g_max[i]) #maximum
-        @constraint(ed,  g[i,t] >= g_min[i]) #minimum
+    # Define the constraint on the maximum and minimum power output of each generator
+    for i in 1:N
+        @constraint(ed,  g[i] <= g_max[i]) #maximum
+        @constraint(ed,  g[i] >= g_min[i]) #minimum
     end
+
+    for j in 1:M
+        # Define the constraint on the wind power injection
+        @constraint(ed, w[j] <= w_f)
+        @constraint(ed, w[j] >= 0)
+    end
+
+    # Define the power balance constraint
+    @constraint(ed, sum(g[i] for i=1:N) + sum(w[j] for j=1:M) == de)
+
+    # Solve statement
+    solve(ed)
+
+    # Solve the economic dispatch problem
+    for i=1:N
+        g_opt[i,t]=getvalue(g[i])
+    end
+    for j=1:M
+        w_opt[j,t]=getvalue(w[j])
+        #ws_opt[j,t]=w_f-getvalue(w[j])
+    end
+    #obj[t]=getobjectivevalue(ed)
 end
 
-for t in 1:T
-    @constraint(ed, C_h[t]==sum(c_g[i] * g[i,t] + c_w * w[t] for i=1:N))
-end
+#T_cost=sum(obj[t] for t=1:T)
 
-# Define the constraint on the wind power injection
-for t in 1:T
-    @constraint(ed, w[t] <= w_f)
-end
-
-# Define the power balance constraint
-for t=1:T
-    @constraint(ed, (sum(g[i,t] for i=1:N) + w[t]) == dem[t])
-end
-
-# Solve statement
-solve(ed)
-
-
-
-# Solve the economic dispatch problem
-g_opt=getValue(g)
-w_opt=getValue(w)
-ws_opt=w_f-getValue(w)
-Ch_opt=getValue(C_h)
-obj=getObjectiveValue(ed)
-
-
-println("\n")
 println("Dispatch of Generators: ", g_opt, " MW")
 println("Dispatch of Wind: ", w_opt, " MW")
-println("Wind spillage: ", w_f-w_opt, " MW")
+println("Wind spillage: ", ws_opt, " MW")
 println("\n")
-println("Hourly cost: ", Ch_opt, " \$")
-println("Total cost: ", obj, "\$")
+println("Hourly cost: ", obj, " \$")
+println("Total cost: ", T_cost, "\$")
