@@ -10,32 +10,33 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
+inputs = CSV.read("C:/Users/kevin/Desktop/input.csv") # Read input csv file
+
 # Define sets
-V = 3 # total number of potential voltage levels
-N = 2 # total number of nodes
-T = 10 # largest time value (hour)
+V = 2 # total number of potential voltage levels
+N = 8 # total number of nodes
+T = 1 # largest time value (hour)
 A = 1000 # large number used for dummy variable constraints
-L = [0 1; 1 0] # array of possible links (L[n,m] = 1 if there can be links b/w n & m)
+L = inputs[20:27] # array of possible links (L[n,m] = 1 if there can be links b/w n & m)
 
 # Define parameters
-d_nm = [0 241; 241 0] # distances between nodes n & m (km)
-a = 1.21e6 # cost of links ($/MW*km)
-a_v = [1.31e6 1.21e6 1.52e6]
-b = 275e6 # cost of substation ($/MW)
-b_v = [200e6 275e6 300e6]
+d_nm = inputs[12:19] # distances between nodes n & m (km)
+a = 1.21e6 # cost of links ($/km)
+a_v = [1.21e6 1.21e6]
+b = 275e6 # cost of substation ($/station)
+b_v = [275e6 275e6]
 r = 0.009 # resistance on link (ohm/km)
-r_v = [0.007 0.009 0.011]
+r_v = [0.009 0.009]
 f = 500 # voltage level in (kV), also voltage base
-f_v = [315 500 735]
+f_v = [450 500]
 p = 2407 # power capacity of a link (MW)
-p_v = [2150 2407 2789]
+p_v = [1757 1953]
 dem_nt = zeros(Float64, N, T) # power demand @ node n & time t (MW)
 for n = 1:N
     for t = 1:T
         if n == 1
-            dem_nt[n,t] = 42
-        end
-        if n == 2
+            dem_nt[n,t] = 60
+        else
             dem_nt[n,t] = 0
         end
     end
@@ -43,18 +44,13 @@ end
 lambda_nt = zeros(Float64, N, T) # value of energy @ node & time t ($/MWh)
 for n = 1:N
     for t = 1:T
-        if n == 1
-            lambda_nt[n,t] = 12
-        end
-        if n == 2
-            lambda_nt[n,t] = 7
-        end
+        lambda_nt[n,t] = inputs[n,3]
     end
 end
-fmax = 1.03 # maximum voltage value for nodes (pu)
-fmin = 0.97 # minimum voltage value for nodes (pu)
+fmax = 1.05 # maximum voltage value for nodes (pu)
+fmin = 0.95 # minimum voltage value for nodes (pu)
 dr = 0.1 # discount rate
-c_n = 500e6*ones(Float64, N, 1) # cost of adding genration @ node n ($)
+c_n = inputs[1,] # cost of adding genration @ node n ($)
 
 # Define problem variables
 @variables(mod, begin
@@ -69,27 +65,39 @@ c_n = 500e6*ones(Float64, N, 1) # cost of adding genration @ node n ($)
 end)
 
 # Define objective function to minimize
-@objective(mod, Min, sum(alpha_vnm[v,n,m]*a_v[v]*p_v[v]*d_nm[n,m] for v in 1:V for n in 1:N for m in 1:N if n < m) # cost of links
-+ sum(alpha_vnm[v,n,m]*b_v[v]*p_v[v] for v in 1:V for n in 1:N for m in 1:N if n != m) # cost of substations
+@objective(mod, Min, sum(alpha_vnm[v,n,m]*a_v[v]*d_nm[n,m] for v in 1:V for n in 1:N for m in 1:N if L[n,m] == 1) # cost of links
++ sum(alpha_vnm[v,n,m]*b_v[v] for v in 1:V for n in 1:N for m in 1:N if n != m) # cost of substations
 + sum(c_n[n]*z_n[n] for n in 1:N) # cost of generation construction
 + sum(dr^t for t in 1:T)*sum(lambda_nt[n,t]*(g_nt[n,t] + del_nt[n,t]) for n in 1:N for t in 1:T)) # cost of operations
 
 # Add constraints
 
 # Decision to add generation (z_n boolean)
-for n in 1:N
+for n in 6:7
     for t in 1:T
         @constraint(mod, g_nt[n,t] == z_n[n]*g_nt[n,t])
     end
 end
 
 # Power balance at a node constraint
-for n in 1:N
-    for t in 1:T
-        @constraint(mod, g_nt[n,t] + del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if L[n,m] == 1))
-        @constraint(mod, del_nt[1,t] == 0.0) # no ijection from node 1
-        @constraint(mod, g_nt[1,t] == 0.0) # no new generation at node 1
+for t in 1:T
+    @constraint(mod, del_nt[1,t] == 0.0) # injection from node 1
+    @constraint(mod, del_nt[3,t] == 15.0) # injection from node 3
+    @constraint(mod, del_nt[4,t] == 5.0) # injection from node 4
+    @constraint(mod, del_nt[5,t] == 5.0) # injection from node 5
+    @constraint(mod, del_nt[6,t] == 10.0) # injection from node 6
+    @constraint(mod, del_nt[7,t] == 10.0) # injection from node 7
+    @constraint(mod, del_nt[8,t] == 10.0) # injection from node 8
+    @constraint(mod, g_nt[1,t] == 0.0) # no new generation at node 1
+    @constraint(mod, g_nt[2,t] == 0.0) # no new generation at node 2
+    @constraint(mod, g_nt[3,t] == 0.0) # no new generation at node 3
+    @constraint(mod, g_nt[4,t] == 0.0) # no new generation at node 4
+    @constraint(mod, g_nt[5,t] == 0.0) # no new generation at node 5
+    @constraint(mod, g_nt[8,t] == 0.0) # no new generation at node 6
+    for n in 1:N
+        @constraint(mod, g_nt[n,t] + del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if n != m))
     end
+    @constraint(mod, sum(alpha_vnm[v,n,m]*p_nmt[n,m,t] for n in 1:N for m in 1:N for v in 1:V) == 0) # Power balance of the system
 end
 
 # Power flow in a link constraint (nonlinear)
