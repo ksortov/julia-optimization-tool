@@ -10,17 +10,17 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
-inputs = CSV.read("C:/Users/kevin/Desktop/input.csv") # Read input csv file
+inputs = CSV.read("C:/Users/kevin/Desktop/input2.csv") # Read input csv file
 
 # Define sets
 V = 2 # total number of potential voltage levels
-N = 8 # total number of nodes
+N = 3 # total number of nodes
 T = 1 # largest time value (hour)
 A = 1000 # large number used for dummy variable constraints
-L = inputs[20:27] # array of possible links (L[n,m] = 1 if there can be links b/w n & m)
+L = inputs[15:17] # array of possible links (L[n,m] = 1 if there can be links b/w n & m)
 
 # Define parameters
-d_nm = inputs[12:19] # distances between nodes n & m (km)
+d_nm = inputs[12:14] # distances between nodes n & m (km)
 a = 1.21e6 # cost of links ($/km)
 a_v = [1.21e6 1.21e6]
 b = 275e6 # cost of substation ($/station)
@@ -35,7 +35,7 @@ dem_nt = zeros(Float64, N, T) # power demand @ node n & time t (MW)
 for n = 1:N
     for t = 1:T
         if n == 1
-            dem_nt[n,t] = 60
+            dem_nt[n,t] = 67
         else
             dem_nt[n,t] = 0
         end
@@ -44,13 +44,19 @@ end
 lambda_nt = zeros(Float64, N, T) # value of energy @ node & time t ($/MWh)
 for n = 1:N
     for t = 1:T
-        lambda_nt[n,t] = inputs[n,3]
+        if n == 1
+            lambda_nt[n,t] = 12
+        elseif n == 2
+            lambda_nt[n,t] = 7
+        elseif n == 3
+            lambda_nt[n,t] = 5
+        end
     end
 end
 fmax = 1.05 # maximum voltage value for nodes (pu)
 fmin = 0.95 # minimum voltage value for nodes (pu)
 dr = 0.1 # discount rate
-c_n = inputs[1,] # cost of adding genration @ node n ($)
+c_n = [0 0 30e3] # cost of adding genration @ node n ($)
 
 # Define problem variables
 @variables(mod, begin
@@ -73,7 +79,7 @@ end)
 # Add constraints
 
 # Decision to add generation (z_n boolean)
-for n in 6:7
+for n in 1:N
     for t in 1:T
         @constraint(mod, g_nt[n,t] == z_n[n]*g_nt[n,t])
     end
@@ -82,22 +88,16 @@ end
 # Power balance at a node constraint
 for t in 1:T
     @constraint(mod, del_nt[1,t] == 0.0) # injection from node 1
-    @constraint(mod, del_nt[3,t] == 15.0) # injection from node 3
-    @constraint(mod, del_nt[4,t] == 5.0) # injection from node 4
-    @constraint(mod, del_nt[5,t] == 5.0) # injection from node 5
-    @constraint(mod, del_nt[6,t] == 10.0) # injection from node 6
-    @constraint(mod, del_nt[7,t] == 10.0) # injection from node 7
-    @constraint(mod, del_nt[8,t] == 10.0) # injection from node 8
+    @constraint(mod, del_nt[3,t] == 0.0) # injection from node 3
+
     @constraint(mod, g_nt[1,t] == 0.0) # no new generation at node 1
     @constraint(mod, g_nt[2,t] == 0.0) # no new generation at node 2
-    @constraint(mod, g_nt[3,t] == 0.0) # no new generation at node 3
-    @constraint(mod, g_nt[4,t] == 0.0) # no new generation at node 4
-    @constraint(mod, g_nt[5,t] == 0.0) # no new generation at node 5
-    @constraint(mod, g_nt[8,t] == 0.0) # no new generation at node 6
+    @constraint(mod, g_nt[3,t] == 10.0) # no new generation at node 3
+
     for n in 1:N
         @constraint(mod, g_nt[n,t] + del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if n != m))
     end
-    @constraint(mod, sum(alpha_vnm[v,n,m]*p_nmt[n,m,t] for n in 1:N for m in 1:N for v in 1:V) == 0) # Power balance of the system
+    @constraint(mod, sum(p_nmt[n,m,t] for n in 1:N for m in 1:N) == 0) # Power balance of the system
 end
 
 # Power flow in a link constraint (nonlinear)
@@ -119,7 +119,7 @@ for n in 1:N
                 @constraint(mod, (p_nmt[n,m,t]) >= sum(-p_v[v]*x_nm[n,m] for v in 1:V)) # lower bound
                 @constraint(mod, (p_nmt[n,m,t]) <= sum(p_v[v]*x_nm[n,m] for v in 1:V)) # upper bound
                 @constraint(mod, x_nm[m,n] == x_nm[n,m]) # links b/w n&m = links b/w m&n
-            elseif n == m
+            elseif n == m || L[n,m] == 0
                 @constraint(mod, x_nm[n,m] == 0) # no links between same node
                 @constraint(mod, p_nmt[n,m,t] == 0) # no power flow between same node
             end
@@ -161,7 +161,7 @@ status = solve(mod) # solve model
 
 # Write outputs to csv files (add file path before file name)
 #CSV.write("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/outputs/links_out.csv", DataFrame(getvalue(x_nm)), append = true)
-#CSV.write("gen_sites_out.csv", DataFrame(getvalue(z_n)), append = true)
+#CSV.write("C:/Users/kevin/Desktop/links_out.csv", DataFrame(getvalue(x_nm)), append = true)
 
 # Print results to console
 println("y_v = ", getvalue(y_v))
