@@ -31,7 +31,7 @@ f = 500 # voltage level in (kV), also voltage base
 f_v = [450 500]
 p = 2407 # power capacity of a link (MW)
 p_v = [1757 1953]
-#dem_nt = zeros(Float64, N, T) # power demand @ node n & time t (MW)
+dem_nt = zeros(Float64, N, T) # power demand @ node n & time t (MW)
 for n = 1:N
     for t = 1:T
         if n == 1
@@ -87,7 +87,7 @@ for t in 1:T
 
     @constraint(mod, g_nt[1,t] == 0.0) # no new generation at node 1
     @constraint(mod, g_nt[2,t] == 0.0) # no new generation at node 2
-    @constraint(mod, g_nt[3,t] == inputs[3,t+1]) # no new generation at node 3
+    @constraint(mod, g_nt[3,t] <= inputs[3,t+1]) # no new generation at node 3
 
     for n in 1:N
         @constraint(mod, g_nt[n,t] + del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if n != m))
