@@ -51,7 +51,8 @@ end
 fmax = 1.05 # maximum voltage value for nodes (pu)
 fmin = 0.95 # minimum voltage value for nodes (pu)
 dr = 0.1 # discount rate
-c_n = [0 0 30e3] # cost of adding genration @ node n ($)
+#c_n = [0 0 30e3] # cost of adding wind generation at node n ($)
+w = 3000 # marginal cost of adding wind genration ($/MW)
 
 # Define problem variables
 @variables(mod, begin
@@ -60,6 +61,7 @@ c_n = [0 0 30e3] # cost of adding genration @ node n ($)
     del_nt[1:N, 1:T] >= 0.0 # power injection @ node n & time t from existing generation capacity (MW)
     p_nmt[1:N, 1:N, 1:T] # power flow b/w nodes n & m @ time t (MW)
     u_nt[1:N, 1:T] # voltage @ node n & time t (kV)
+    c_n[1:N] # total cost of adding wind generation at node n ($)
     z_n[1:N], Bin # boolean for new generation construction decision
     y_v[1:V], Bin # boolean for selected voltage
     alpha_vnm[1:V, 1:N, 1:N], Int # dummy variable for linearization
@@ -72,6 +74,10 @@ end)
 + sum(dr^t for t in 1:T)*sum(lambda_nt[n,t]*(g_nt[n,t] + del_nt[n,t]) for n in 1:N for t in 1:T)) # cost of operations
 
 # Add constraints
+
+for n in 1:N
+    @constraint(mod, c_n[n] == maximum(w*g_nt[n,]))
+end
 
 # Decision to add generation (z_n boolean)
 for n in 1:N
@@ -153,6 +159,7 @@ end
 #end
 
 status = solve(mod) # solve model
+maximum(getvalue(g_nt[1,]))
 
 # Write outputs to csv files (add file path before file name)
 #CSV.write("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/outputs/links_out.csv", DataFrame(getvalue(x_nm)), append = true)
