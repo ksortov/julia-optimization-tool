@@ -234,7 +234,7 @@ constraints/disableenfops = FALSE
 
 # verbosity level of output
 # [type: int, advanced: FALSE, range: [0,5], default: 4]
-display/verblevel = 4
+display/verblevel = 5
 
 # maximal number of characters in a node information line
 # [type: int, advanced: FALSE, range: [0,2147483647], default: 139]
@@ -558,7 +558,7 @@ misc/allowobjprop = TRUE
 
 # objective value for reference purposes
 # [type: real, advanced: FALSE, range: [-1.79769313486232e+308,1.79769313486232e+308], default: 1e+99]
-misc/referencevalue = 8.33e+08
+misc/referencevalue = 1e+99
 
 # used symmetry handling technique (0: off; 1: polyhedral; 2: orbital fixing)
 # [type: int, advanced: FALSE, range: [0,2], default: 2]
@@ -594,7 +594,7 @@ numerics/infinity = 1e+20
 
 # absolute values smaller than this are considered zero
 # [type: real, advanced: FALSE, range: [1e-20,0.001], default: 1e-09]
-numerics/epsilon = 1e-06
+numerics/epsilon = 1e-03
 
 # absolute values of sums smaller than this are considered zero
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
@@ -610,7 +610,7 @@ numerics/checkfeastolfac = 1
 
 # primal feasibility tolerance of LP solver
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
-numerics/lpfeastol = 1e-06
+numerics/lpfeastol = 1e-03
 
 # feasibility tolerance for reduced costs in LP solution
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-07]
@@ -950,7 +950,7 @@ concurrent/sync/freqfactor = 1.5
 
 # when adapting the synchronization frequency this value is the targeted relative difference by which the absolute gap decreases per synchronization
 # [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 0.001]
-concurrent/sync/targetprogress = 0.001
+concurrent/sync/targetprogress = 1
 
 # maximum number of solutions that will be shared in a single synchronization
 # [type: int, advanced: FALSE, range: [0,1000], default: 3]
@@ -6022,7 +6022,7 @@ heuristics/mpec/minimprove = 0.01
 
 # minimum amount of gap left in order to call the heuristic
 # [type: real, advanced: FALSE, range: [0,1e+20], default: 0.05]
-heuristics/mpec/mingapleft = 0.05
+heuristics/mpec/mingapleft = 1
 
 # maximum number of iterations of the MPEC loop
 # [type: int, advanced: FALSE, range: [0,2147483647], default: 100]
@@ -6290,7 +6290,7 @@ heuristics/proximity/lpitersquot = 0.2
 
 # minimum primal-dual gap for which the heuristic is executed
 # [type: real, advanced: TRUE, range: [0,1e+20], default: 0.01]
-heuristics/proximity/mingap = 0.01
+heuristics/proximity/mingap = 1
 
 # should uct node selection be used at the beginning of the search?
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
