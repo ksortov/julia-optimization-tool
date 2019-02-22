@@ -10,24 +10,23 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
-inputs = CSV.read("C:/Users/kevin/Desktop/scenario2.csv") # Read input csv file
-node_num = length(inputs[1])
+inputs = CSV.read("C:/Users/kevin/Desktop/scenarios/scenario6.csv") # Read input csv file
+node_num = length(inputs[1]) # number of nodes considered in given scenario
 
 # Define sets
 V = 2 # total number of potential voltage levels
 N = node_num # total number of nodes
 T = 12 # largest time value (hour)
 A = 1000 # large number used for dummy variable constraints
-L = inputs[47:50] # array of possible links (L[n,m] = 1 if there can be links b/w n & m)
+L = inputs[47:47+node_num-1] # array of possible links (L[n,m] = 1 if there can be links b/w n & m)
 
 # Define parameters
-d_nm = inputs[51:54] # distances between nodes n & m (km)
+d_nm = inputs[47+node_num:47+2*node_num-1] # distances between nodes n & m (km)
 a_v = inputs[40] # cost of links ($/km)
 b_v = inputs[41] # cost of substation ($/station)
 r_v = inputs[42] # resistance on link (ohm/km)
 f_v = inputs[39] # voltage level in (kV), also voltage base
 p_v = inputs[43] # power capacity of a link (MW)
-
 dem_nt = inputs[25:36] # power demand @ node n & time t (MW)
 lambda_nt = zeros(Float64, N, T) # value of energy @ node & time t ($/MWh)
 for n = 1:N
