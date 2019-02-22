@@ -10,27 +10,24 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
-inputs = CSV.read("C:/Users/kevin/Desktop/input2.csv") # Read input csv file
-inputs[1,2]
+inputs = CSV.read("C:/Users/kevin/Desktop/scenario2.csv") # Read input csv file
+node_num = length(inputs[1])
+
 # Define sets
 V = 2 # total number of potential voltage levels
-N = 4 # total number of nodes
+N = node_num # total number of nodes
 T = 12 # largest time value (hour)
 A = 1000 # large number used for dummy variable constraints
 L = inputs[47:50] # array of possible links (L[n,m] = 1 if there can be links b/w n & m)
 
 # Define parameters
 d_nm = inputs[51:54] # distances between nodes n & m (km)
-a = 1.21e6 # cost of links ($/km)
-a_v = [1.21e6 1.21e6]
-b = 275e6 # cost of substation ($/station)
-b_v = [275e6 275e6]
-r = 0.009 # resistance on link (ohm/km)
-r_v = [0.009 0.009]
-f = 500 # voltage level in (kV), also voltage base
-f_v = [450 500]
-p = 2407 # power capacity of a link (MW)
-p_v = [1757 1953]
+a_v = inputs[40] # cost of links ($/km)
+b_v = inputs[41] # cost of substation ($/station)
+r_v = inputs[42] # resistance on link (ohm/km)
+f_v = inputs[39] # voltage level in (kV), also voltage base
+p_v = inputs[43] # power capacity of a link (MW)
+
 dem_nt = inputs[25:36] # power demand @ node n & time t (MW)
 lambda_nt = zeros(Float64, N, T) # value of energy @ node & time t ($/MWh)
 for n = 1:N
@@ -79,12 +76,12 @@ end
 
 # Power balance at a node and power injection/ wind generation
 for t in 1:T
-    @constraint(mod, del_nt[1,t] == inputs[1,t]) # injection from node 1
-    @constraint(mod, del_nt[3,t] == inputs[3,t]) # injection from node 3
-    @constraint(mod, del_nt[4,t] == inputs[4,t]) # injection from node 4
     for n in 1:N
         @constraint(mod, g_nt[n,t] <= inputs[n,t+12]) # maximum amount of wind generation @ node n and time t
         @constraint(mod, g_nt[n,t] + del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if n != m)) #power balance at a node
+        if n != 2
+            @constraint(mod, del_nt[n,t] == inputs[n,t]) # injection from node n (node 2 is slack)
+        end
     end
     @constraint(mod, sum(p_nmt[n,m,t] for n in 1:N for m in 1:N) == 0) # power balance of the system
 end
