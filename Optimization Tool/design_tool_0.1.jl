@@ -6,11 +6,11 @@
 using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 
 # Define solver used in the optimization problem
-# Currently using Couenne as it can handle nonlinear, mixed-integer problems
+# Currently using SCIP
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
-inputs = CSV.read("C:/Users/kevin/Desktop/scenarios/scenario6.csv") # Read input csv file
+inputs = CSV.read("C:/Users/kevin/Desktop/scenarios/scenario3.csv") # Read input csv file
 node_num = length(inputs[1]) # number of nodes considered in given scenario
 
 # Define sets
@@ -28,56 +28,55 @@ r_v = inputs[42] # resistance on link (ohm/km)
 f_v = inputs[39] # voltage level in (kV), also voltage base
 p_v = inputs[43] # power capacity of a link (MW)
 dem_nt = inputs[25:36] # power demand @ node n & time t (MW)
-lambda_nt = zeros(Float64, N, T) # value of energy @ node & time t ($/MWh)
-for n = 1:N
-    for t = 1:T
-            lambda_nt[n,t] = inputs[n,38]
-    end
-end
+lambda_n = inputs[38]
 fmax = 1.05 # maximum voltage value for nodes (pu)
 fmin = 0.95 # minimum voltage value for nodes (pu)
 dr = 0.1 # discount rate
-#c_n = [0 0 30e3] # cost of adding wind generation at node n ($)
 w = 3000 # marginal cost of adding wind genration ($/MW)
+c_n = zeros(Float64, N)
+for n in 1:N
+    c_n[n] = maximum(3000*inputs[n,t+12] for t in 1:T)
+end
 
 # Define problem variables
 @variables(mod, begin
     x_nm[1:N, 1:N] >= 0, Int # number of parallel lines b/w nodes n & m
-    g_nt[1:N, 1:T] >= 0.0 # generation injection @ node n & time t from new generation construction (MW)
+    0.0 <= g_nt[n in 1:N, t in 1:T] <= inputs[n,t+12] # generation injection @ node n & time t from new generation construction (MW)
     del_nt[1:N, 1:T] >= 0.0 # power injection @ node n & time t from existing generation capacity (MW)
     p_nmt[1:N, 1:N, 1:T] # power flow b/w nodes n & m @ time t (MW)
     u_nt[1:N, 1:T] # voltage @ node n & time t (kV)
-    c_n[1:N] # total cost of adding wind generation at node n ($)
     z_n[1:N], Bin # boolean for new generation construction decision
+    sub_n[1:N], Bin # number of substations to build
     y_v[1:V], Bin # boolean for selected voltage
     alpha_vnm[1:V, 1:N, 1:N], Int # dummy variable for linearization
 end)
 
 # Define objective function to minimize
-@objective(mod, Min, sum(alpha_vnm[v,n,m]*a_v[v]*d_nm[n,m] for v in 1:V for n in 1:N for m in 1:N if L[n,m] == 1) # cost of links
+@objective(mod, Min, sum(alpha_vnm[v,n,m]*a_v[v]*d_nm[n,m] for v in 1:V for n in 1:N for m in 1:N if n < m) # cost of links
 + sum(alpha_vnm[v,n,m]*b_v[v] for v in 1:V for n in 1:N for m in 1:N if n != m) # cost of substations
 + sum(c_n[n]*z_n[n] for n in 1:N) # cost of generation construction
-+ sum(dr^t for t in 1:T)*sum(lambda_nt[n,t]*(g_nt[n,t] + del_nt[n,t]) for n in 1:N for t in 1:T)) # cost of operations
++ sum(24*(365/12)*25*lambda_n[n]*(g_nt[n,t] + del_nt[n,t]) for n in 1:N for t in 1:T)) # cost of operations
+#sum((1/((1+dr)^t))*(9e6*lambda_n[n]*(g_nt[n,t] + del_nt[n,t])) for n in 1:N for t in 1:T)) # NPV
 
 # Add constraints
-
-for n in 1:N
-    @constraint(mod, c_n[n] == maximum(w*g_nt[n,]))
-end
 
 # Decision to add generation (z_n boolean)
 for n in 1:N
     for t in 1:T
         @constraint(mod, g_nt[n,t] == z_n[n]*g_nt[n,t])
-        @constraint(mod, z_n[n] <= g_nt[n,t])
+        #@constraint(mod, z_n[n] <= g_nt[n,t])
     end
+end
+
+# Presence of substation at node n (z_n boolean)
+for n in 1:N
+    @constraint(mod, sub_n[n] == sum(x_nm[m] for m in 1:N))
 end
 
 # Power balance at a node and power injection/ wind generation
 for t in 1:T
     for n in 1:N
-        @constraint(mod, g_nt[n,t] <= inputs[n,t+12]) # maximum amount of wind generation @ node n and time t
-        @constraint(mod, g_nt[n,t] + del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if n != m)) #power balance at a node
+        @constraint(mod, g_nt[n,t] + del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if L[n,m] == 1)) #power balance at a node
         if n != 2
             @constraint(mod, del_nt[n,t] == inputs[n,t]) # injection from node n (node 2 is slack)
         end
@@ -156,4 +155,5 @@ println("del_nt = ", getvalue(del_nt))
 println("p_nmt = ", getvalue(p_nmt))
 println("u_nt = ", getvalue(u_nt))
 println("z_n = ", getvalue(z_n.'))
+println("sub_n = ", getvalue(sub_n.'))
 println("Objective value = ", getobjectivevalue(mod))
