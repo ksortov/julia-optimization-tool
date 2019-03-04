@@ -46,14 +46,14 @@ end
     p_nmt[1:N, 1:N, 1:T] # power flow b/w nodes n & m @ time t (MW)
     u_nt[1:N, 1:T] # voltage @ node n & time t (kV)
     z_n[1:N], Bin # boolean for new generation construction decision
-    sub_n[1:N], Bin # number of substations to build
+    sub_num, Int # number of substations to build
     y_v[1:V], Bin # boolean for selected voltage
     alpha_vnm[1:V, 1:N, 1:N], Int # dummy variable for linearization
 end)
 
 # Define objective function to minimize
 @objective(mod, Min, sum(alpha_vnm[v,n,m]*a_v[v]*d_nm[n,m] for v in 1:V for n in 1:N for m in 1:N if n < m) # cost of links
-+ sum(alpha_vnm[v,n,m]*b_v[v] for v in 1:V for n in 1:N for m in 1:N if n != m) # cost of substations
++ sum(sub_num*y_v[v]*b_v[v] for v in 1:V) # cost of substations
 + sum(c_n[n]*z_n[n] for n in 1:N) # cost of generation construction
 + sum(24*(365/12)*25*lambda_n[n]*(g_nt[n,t] + del_nt[n,t]) for n in 1:N for t in 1:T)) # cost of operations
 #sum((1/((1+dr)^t))*(9e6*lambda_n[n]*(g_nt[n,t] + del_nt[n,t])) for n in 1:N for t in 1:T)) # NPV
@@ -68,10 +68,8 @@ for n in 1:N
     end
 end
 
-# Presence of substation at node n (z_n boolean)
-for n in 1:N
-    @constraint(mod, sub_n[n] == sum(x_nm[m] for m in 1:N))
-end
+# Number of substations to build (1 per linked node)
+@constraint(mod, sub_num == sum(x_nm[n,m] for n in 2:N for m in 1:N) + 1)
 
 # Power balance at a node and power injection/ wind generation
 for t in 1:T
@@ -103,7 +101,7 @@ for n in 1:N
                 @constraint(mod, (p_nmt[n,m,t]) >= sum(-p_v[v]*x_nm[n,m] for v in 1:V)) # lower bound
                 @constraint(mod, (p_nmt[n,m,t]) <= sum(p_v[v]*x_nm[n,m] for v in 1:V)) # upper bound
                 @constraint(mod, x_nm[m,n] == x_nm[n,m]) # links b/w n&m = links b/w m&n
-            elseif n == m || L[n,m] == 0
+            elseif L[n,m] == 0
                 @constraint(mod, x_nm[n,m] == 0) # no links between same node
                 @constraint(mod, p_nmt[n,m,t] == 0) # no power flow between same node
             end
@@ -155,5 +153,5 @@ println("del_nt = ", getvalue(del_nt))
 println("p_nmt = ", getvalue(p_nmt))
 println("u_nt = ", getvalue(u_nt))
 println("z_n = ", getvalue(z_n.'))
-println("sub_n = ", getvalue(sub_n.'))
+println("sub_num = ", getvalue(sub_num.'))
 println("Objective value = ", getobjectivevalue(mod))
