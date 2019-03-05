@@ -3,6 +3,7 @@ using JuMP # used for mathematical programming
 using Interact # used for enabling the slider
 using Gadfly # used for plotting
 using Clp
+using Ipopt
 
 # Define some input data about the test system
 # Maximum power output of generators
@@ -24,30 +25,34 @@ const T=10;
 R=0.0366; #ohm/km
 
 #Link lenght
-dist=[  0, 223, 329, 235, 196, 117, 257, 198
-      223,   0, NaN, NaN, NaN, 275, NaN, NaN
-      329, NaN,   0, NaN, NaN, 242, 124, NaN
-      235, NaN, NaN,   0, NaN, 216, NaN, 181
-      196, NaN, NaN, NaN,   0, 287, NaN, NaN
-      117, 275, 242, 216, 287,   0, 167, 115
-      257, NaN, 124, NaN, NaN, 167,   0, 183
-      198, NaN, NaN, 181, NaN, 115, 183,   0];
+dist=[  0 223 329 235 196 117 257 198
+      223   0   0   0   0 275   0   0
+      329   0   0   0   0 242 124   0
+      235   0   0   0   0 216   0 181
+      196   0   0   0   0 287   0   0
+      117 275 242 216 287   0 167 115
+      257   0 124   0   0 167   0 183
+      198   0   0 181   0 115 183   0];
 
 #Y matrix
-Y = R*dist;
-
+Y = zeros(N,N);
+for i=1:N
+    for j=1:N
+        Y[i,j]=1/(R*dist[i,j]);
+    end
+end
 #Number of Nodes
 N=8;#not fully sure about this
 
 #Array of possible links
-L=[0,1,1,0,0,1,0,0
-   1,0,0,0,0,0,0,0
-   1,0,0,0,0,0,0,0
-   0,0,0,0,0,0,0,0
-   0,0,0,0,0,0,0,0
-   1,0,0,0,0,0,0,0
-   0,0,0,0,0,0,0,0
-   0,0,0,0,0,0,0,0];
+L=[0 1 1 0 0 1 0 0
+   1 0 0 0 0 0 0 0
+   1 0 0 0 0 0 0 0
+   0 0 0 0 0 0 0 0
+   0 0 0 0 0 0 0 0
+   1 0 0 0 0 0 0 0
+   0 0 0 0 0 0 0 0
+   0 0 0 0 0 0 0 0];
 
 #Generator Array
 #Which nodes can supply power through already existing generation
@@ -65,23 +70,25 @@ v_max=1.05;
 M=1;#this might not work like this for much longer,
 
 #Total demand at every hour
-dem=[300, 500, 1500, 900, 1100, 1300, 1500, 1400, 1300, 1200
-     0,   0,   0,    0,   0,    0,    0,    0,    0,    0
-     0,   0,   0,    0,   0,    0,    0,    0,    0,    0
-     0,   0,   0,    0,   0,    0,    0,    0,    0,    0
-     0,   0,   0,    0,   0,    0,    0,    0,    0,    0
-     0,   0,   0,    0,   0,    0,    0,    0,    0,    0
-     0,   0,   0,    0,   0,    0,    0,    0,    0,    0
-     0,   0,   0,    0,   0,    0,    0,    0,    0,    0];
+dem=[300 500 1500 900 1100 1300 1500 1400 1300 1200
+     0   0   0    0   0    0    0    0    0    0
+     0   0   0    0   0    0    0    0    0    0
+     0   0   0    0   0    0    0    0    0    0
+     0   0   0    0   0    0    0    0    0    0
+     0   0   0    0   0    0    0    0    0    0
+     0   0   0    0   0    0    0    0    0    0
+     0   0   0    0   0    0    0    0    0    0];
 
-g_opt=zeros(N, T);
-w_opt=zeros(N, T);
-ws_opt=zeros(N, T);
+g_opt=zeros(N,T);
+w_opt=zeros(N,T);
+ws_opt=zeros(N,T);
 obj=zeros(1,T);
 
 for t in 1:T
+    Node_Sum=0;
+
     #Define the economic dispatch (ED) model
-    ed=Model(solver = ClpSolver())
+    ed=Model(solver = IpoptSolver())
 
     # Define decision variables
     @variable(ed, 0 <= g[i=1:N] <= g_max[i]) # power output of generators
@@ -94,8 +101,8 @@ for t in 1:T
 
     # Define the constraint on the maximum and minimum power output of each generator
     for i in 1:N
-        @constraint(ed,  g[i] <= g_max[i]) #maximum
-        @constraint(ed,  g[i] >= g_min[i]) #minimum
+        @constraint(ed, g[i] <= g_max[i]) #maximum
+        @constraint(ed, g[i] >= g_min[i]) #minimum
         # Define the constraint on the wind power injection
         @constraint(ed, w[i] <= w_f[i])
         @constraint(ed, w[i] >= 0)
@@ -110,10 +117,10 @@ for t in 1:T
     #Define power flow/balance
     for i in 1:N
         for k in 1:N
-            if L[i,k]==1
-                @NLconstraint(ed, sum(v_nt[i] * v_nt[k] * Y[i,k]) == g[i]-dem[i,t])
-            end
+            Node_Sum = Node_Sum + v_nt[i] * v_nt[k] * Y[i,k] * L[i,k]; #all power flow for node i
+            #L[i,k] makes it so the power flow value is zero in the absence of a link
         end
+        #@NLconstraint(ed, Node_Sum == g[i]-dem[i,t])
     end
 
     # Solve statement
