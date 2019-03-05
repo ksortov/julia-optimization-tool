@@ -7,7 +7,7 @@ using Ipopt
 
 # Define some input data about the test system
 # Maximum power output of generators
-const g_max = [0,1000,1000,0,0,0,0,0];
+const g_max = [0,10,1000,0,0,0,0,0];
 # Minimum power output of generators
 const g_min = [0,0,300,0,0,0,0,0];
 # Incremental cost of generators
@@ -20,6 +20,9 @@ c_w = [0,0,0,0,0,50,0,0];
 w_f = [0,0,0,0,0,200,0,0];
 #Largest time value
 const T=10;
+
+#Number of nodes
+N=8;#not fully sure about this
 
 #Resistance
 R=0.0366; #ohm/km
@@ -41,16 +44,14 @@ for i=1:N
         Y[i,j]=1/(R*dist[i,j]);
     end
 end
-#Number of Nodes
-N=8;#not fully sure about this
 
 #Array of possible links
-L=[0 1 1 0 0 1 0 0
-   1 0 0 0 0 0 0 0
+L=[0 1 0 0 0 0 0 0
    1 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
-   1 0 0 0 0 0 0 0
+   0 0 0 0 0 0 0 0
+   0 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0];
 
@@ -85,7 +86,6 @@ ws_opt=zeros(N,T);
 obj=zeros(1,T);
 
 for t in 1:T
-    Node_Sum=0;
 
     #Define the economic dispatch (ED) model
     ed=Model(solver = IpoptSolver())
@@ -94,6 +94,7 @@ for t in 1:T
     @variable(ed, 0 <= g[i=1:N] <= g_max[i]) # power output of generators
     @variable(ed, 0 <= w[i=1:N]  <= w_f[i]) # wind power injection
     @variable(ed, v_nt[i=1:N] <= v_max) # voltage levels
+    #@variable(ed, Node_Sum) # trying to solce everything
 
 
     # Define the objective function
@@ -116,11 +117,7 @@ for t in 1:T
 
     #Define power flow/balance
     for i in 1:N
-        for k in 1:N
-            Node_Sum = Node_Sum + v_nt[i] * v_nt[k] * Y[i,k] * L[i,k]; #all power flow for node i
-            #L[i,k] makes it so the power flow value is zero in the absence of a link
-        end
-        #@NLconstraint(ed, Node_Sum == g[i]-dem[i,t])
+        @NLconstraint(ed, sum(v_nt[i] * v_nt[k] * Y[i,k] * L[i,k] for k=1:N) == (g[i]-dem[i,t]));
     end
 
     # Solve statement
