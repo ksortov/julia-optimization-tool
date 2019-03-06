@@ -7,7 +7,7 @@ using Ipopt
 
 # Define some input data about the test system
 # Maximum power output of generators
-const g_max = [0,10,1000,0,0,0,0,0];
+const g_max = [0,10000,1000,0,0,0,0,0];
 # Minimum power output of generators
 const g_min = [0,0,0,0,0,0,0,0];
 # Incremental cost of generators
@@ -19,7 +19,7 @@ c_w = [0,0,0,0,0,50,0,0];
 # Wind forecast
 w_f = [0,0,0,0,0,200,0,0];
 #Largest time value
-const T=2;
+const T=10;
 
 #Number of nodes
 N=8;#not fully sure about this
@@ -120,7 +120,11 @@ for t in 1:T
 
     #Define power flow/balance
     for i in 1:N
-        @NLconstraint(ed, sum((v_nt[i] - v_nt[k]) * v_nt[i] * Y[i,k] * L[i,k] for k=1:N) == (g[i]-dem[i,t]));
+        if i == 1 || GB[i] == 1
+            @NLconstraint(ed, sum((v_nt[i] - v_nt[k]) * v_nt[i] * Y[i,k] * L[i,k] for k=1:N) == (g[i]-dem[i,t]));
+        else
+        @constraint(ed, g[i] == 0)
+        end
     end
 
     # Solve statement
