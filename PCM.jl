@@ -9,7 +9,7 @@ using Ipopt
 # Maximum power output of generators
 const g_max = [0,10,1000,0,0,0,0,0];
 # Minimum power output of generators
-const g_min = [0,0,300,0,0,0,0,0];
+const g_min = [0,0,0,0,0,0,0,0];
 # Incremental cost of generators
 const c_g = [0,50,100,0,0,0,0,0];
 # Fixed cost of generators
@@ -19,7 +19,7 @@ c_w = [0,0,0,0,0,50,0,0];
 # Wind forecast
 w_f = [0,0,0,0,0,200,0,0];
 #Largest time value
-const T=10;
+const T=2;
 
 #Number of nodes
 N=8;#not fully sure about this
@@ -41,7 +41,9 @@ dist=[  0 223 329 235 196 117 257 198
 Y = zeros(N,N);
 for i=1:N
     for j=1:N
-        Y[i,j]=1/(R*dist[i,j]);
+        if dist[i,j] != 0
+            Y[i,j]=1/(R*dist[i,j]); #Considering this is multiplied with PU values, this should be in PU
+        end
     end
 end
 
@@ -57,18 +59,19 @@ L=[0 1 0 0 0 0 0 0
 
 #Generator Array
 #Which nodes can supply power through already existing generation
-GB=[0,1,1,0,0,0,0,0];#This is/could essentially be a boolean
+GB=[0,1,0,0,0,0,0,0];#This is/could essentially be a boolean
 
 #Wind array
 #Which nodes can supply Wind
-WB=[0,0,0,0,0,1,1,0];#Also essentially a boolean
+WB=[0,0,0,0,0,0,0,0];#Also essentially a boolean
 
 #voltage levels
-v_min=0.95;
-v_max=1.05;
+V_target = 500 #kV
+v_min=0.95*V_target;
+v_max=1.05*V_target;
 
 #Number of wind turbines
-M=1;#this might not work like this for much longer,
+M=1;#Not used at all right now
 
 #Total demand at every hour
 dem=[300 500 1500 900 1100 1300 1500 1400 1300 1200
@@ -117,7 +120,7 @@ for t in 1:T
 
     #Define power flow/balance
     for i in 1:N
-        @NLconstraint(ed, sum(v_nt[i] * v_nt[k] * Y[i,k] * L[i,k] for k=1:N) == (g[i]-dem[i,t]));
+        @NLconstraint(ed, sum((v_nt[i] - v_nt[k]) * v_nt[i] * Y[i,k] * L[i,k] for k=1:N) == (g[i]-dem[i,t]));
     end
 
     # Solve statement
