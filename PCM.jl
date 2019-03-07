@@ -7,19 +7,19 @@ using Ipopt
 
 # Define some input data about the test system
 # Maximum power output of generators
-const g_max = [0,10000,1000,0,0,0,0,0];
+const g_max = [0,100000,1000,0,0,0,0,0];
 # Minimum power output of generators
 const g_min = [0,0,0,0,0,0,0,0];
 # Incremental cost of generators
-const c_g = [0,50,100,0,0,0,0,0];
+const c_g = [0,7,100,0,0,0,0,0];
 # Fixed cost of generators
-const c_g0 = [0,1000,10,0,0,0,0,0];
+const c_g0 = [0,0,10,0,0,0,0,0];
 # Incremental cost of wind generators
 c_w = [0,0,0,0,0,50,0,0];
 # Wind forecast
 w_f = [0,0,0,0,0,200,0,0];
 #Largest time value
-const T=10;
+const T=8736;
 
 #Number of nodes
 N=8;#not fully sure about this
@@ -74,14 +74,16 @@ v_max=1.05*V_target;
 M=1;#Not used at all right now
 
 #Total demand at every hour
-dem=[300 500 1500 900 1100 1300 1500 1400 1300 1200
-     0   0   0    0   0    0    0    0    0    0
-     0   0   0    0   0    0    0    0    0    0
-     0   0   0    0   0    0    0    0    0    0
-     0   0   0    0   0    0    0    0    0    0
-     0   0   0    0   0    0    0    0    0    0
-     0   0   0    0   0    0    0    0    0    0
-     0   0   0    0   0    0    0    0    0    0];
+#dem=[300 500 1500 900 1100 1300 1500 1400 1300 1200
+#     0   0   0    0   0    0    0    0    0    0
+#     0   0   0    0   0    0    0    0    0    0
+#     0   0   0    0   0    0    0    0    0    0
+#     0   0   0    0   0    0    0    0    0    0
+#     0   0   0    0   0    0    0    0    0    0
+#     0   0   0    0   0    0    0    0    0    0
+#     0   0   0    0   0    0    0    0    0    0];
+
+#dem = 50+7*sin(7*pi*t/24)+10*cos(2*pi*t/8760);
 
 g_opt=zeros(N,T);
 w_opt=zeros(N,T);
@@ -89,6 +91,15 @@ ws_opt=zeros(N,T);
 obj=zeros(1,T);
 
 for t in 1:T
+
+    dem = [50+7*sin(7*pi*t/24)+10*cos(2*pi*t/8760)
+            0
+            0
+            0
+            0
+            0
+            0
+            0];
 
     #Define the economic dispatch (ED) model
     ed=Model(solver = IpoptSolver())
@@ -121,7 +132,7 @@ for t in 1:T
     #Define power flow/balance
     for i in 1:N
         if i == 1 || GB[i] == 1
-            @NLconstraint(ed, sum((v_nt[i] - v_nt[k]) * v_nt[i] * Y[i,k] * L[i,k] for k=1:N) == (g[i]-dem[i,t]));
+            @NLconstraint(ed, sum((v_nt[i] - v_nt[k]) * v_nt[i] * Y[i,k] * L[i,k] for k=1:N) == (g[i]-dem[i]));
         else
         @constraint(ed, g[i] == 0)
         end
@@ -144,12 +155,12 @@ end
 
 T_cost=sum(obj[t] for t=1:T)
 
-println("Dispatch of Generators: ", g_opt, " MW");
-println("Dispatch of Wind: ", w_opt, " MW");
-println("Wind spillage: ", ws_opt, " MW");
-println("\n");
-println("Hourly cost: ", obj, " \$");
-println("Total cost: ", T_cost, "\$");
+#println("Dispatch of Generators: ", g_opt, " MW");
+#println("Dispatch of Wind: ", w_opt, " MW");
+#println("Wind spillage: ", ws_opt, " MW");
+#println("\n");
+#println("Hourly cost: ", obj, " \$");
+#println("Total cost: ", T_cost, "\$");
 g_opt
 w_opt
 obj
