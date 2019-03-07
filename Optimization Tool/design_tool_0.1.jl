@@ -10,7 +10,7 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
-inputs = CSV.read("C:/Users/kevin/Desktop/scenarios/scenario3.csv") # Read input csv file
+inputs = CSV.read("C:/Users/kevin/Desktop/scenarios/scenario1_1.csv") # Read input csv file
 node_num = length(inputs[1]) # number of nodes considered in given scenario
 
 # Define sets
@@ -42,7 +42,7 @@ end
 @variables(mod, begin
     x_nm[1:N, 1:N] >= 0, Int # number of parallel lines b/w nodes n & m
     0.0 <= g_nt[n in 1:N, t in 1:T] <= inputs[n,t+12] # generation injection @ node n & time t from new generation construction (MW)
-    del_nt[1:N, 1:T] >= 0.0 # power injection @ node n & time t from existing generation capacity (MW)
+    0.0 <= del_nt[n in 1:N, t in 1:T] <= inputs[n,t] # power injection @ node n & time t from existing generation capacity (MW)
     p_nmt[1:N, 1:N, 1:T] # power flow b/w nodes n & m @ time t (MW)
     u_nt[1:N, 1:T] # voltage @ node n & time t (kV)
     z_n[1:N], Bin # boolean for new generation construction decision
@@ -64,7 +64,7 @@ end)
 for n in 1:N
     for t in 1:T
         @constraint(mod, g_nt[n,t] == z_n[n]*g_nt[n,t])
-        #@constraint(mod, z_n[n] <= g_nt[n,t])
+        @constraint(mod, z_n[n] <= g_nt[n,t])
     end
 end
 
@@ -75,9 +75,6 @@ end
 for t in 1:T
     for n in 1:N
         @constraint(mod, g_nt[n,t] + del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if L[n,m] == 1)) #power balance at a node
-        if n != 2
-            @constraint(mod, del_nt[n,t] == inputs[n,t]) # injection from node n (node 2 is slack)
-        end
     end
     @constraint(mod, sum(p_nmt[n,m,t] for n in 1:N for m in 1:N) == 0) # power balance of the system
 end
