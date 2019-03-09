@@ -11,18 +11,18 @@ const g_max = [0,100000,1000,0,0,0,0,0];
 # Minimum power output of generators
 const g_min = [0,0,0,0,0,0,0,0];
 # Incremental cost of generators
-const c_g = [0,7,100,0,0,0,0,0];
+const c_g = [0,7,2,0,0,0,0,0];
 # Fixed cost of generators
-const c_g0 = [0,0,10,0,0,0,0,0];
+const c_g0 = [0,0,0,0,0,0,0,0];
 # Incremental cost of wind generators
-c_w = [0,0,0,0,0,50,0,0];
+c_w = [0,0,0,0,0,5,5,0];
 # Wind forecast
-w_f = [0,0,0,0,0,200,0,0];
+w_f = [0,0,0,0,0,200,0,0]; #Change this for a wind forecast curve
 #Largest time value
-const T=8736;
+const T=8760;
 
 #Number of nodes
-N=8;#not fully sure about this
+N=8;
 
 #Resistance
 R=0.0366; #ohm/km
@@ -42,16 +42,16 @@ Y = zeros(N,N);
 for i=1:N
     for j=1:N
         if dist[i,j] != 0
-            Y[i,j]=1/(R*dist[i,j]); #Considering this is multiplied with PU values, this should be in PU
+            Y[i,j]=1/(R*dist[i,j]);
         end
     end
 end
 
-#Array of possible links
-L=[0 1 0 0 0 0 0 0
+#Array of links
+L=[0 1 0 1 0 0 0 0
    1 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
-   0 0 0 0 0 0 0 0
+   1 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
@@ -61,6 +61,9 @@ L=[0 1 0 0 0 0 0 0
 #Which nodes can supply power through already existing generation
 GB=[0,1,0,0,0,0,0,0];#This is/could essentially be a boolean
 
+#Which nodes can consume Power
+LB=[1,0,0,1,0,0,0,0]
+
 #Wind array
 #Which nodes can supply Wind
 WB=[0,0,0,0,0,0,0,0];#Also essentially a boolean
@@ -69,9 +72,6 @@ WB=[0,0,0,0,0,0,0,0];#Also essentially a boolean
 V_target = 500 #kV
 v_min=0.95*V_target;
 v_max=1.05*V_target;
-
-#Number of wind turbines
-M=1;#Not used at all right now
 
 #Total demand at every hour
 #dem=[300 500 1500 900 1100 1300 1500 1400 1300 1200
@@ -96,7 +96,7 @@ for t in 1:T
             0
             0
             0
-            0
+            10+2sin(2*pi*t/24)+8sin(2*pi*t/8760)
             0
             0
             0];
@@ -131,7 +131,7 @@ for t in 1:T
 
     #Define power flow/balance
     for i in 1:N
-        if i == 1 || GB[i] == 1
+        if LB[i] == 1 || GB[i] == 1
             @NLconstraint(ed, sum((v_nt[i] - v_nt[k]) * v_nt[i] * Y[i,k] * L[i,k] for k=1:N) == (g[i]-dem[i]));
         else
         @constraint(ed, g[i] == 0)
@@ -162,6 +162,5 @@ T_cost=sum(obj[t] for t=1:T)
 #println("Hourly cost: ", obj, " \$");
 #println("Total cost: ", T_cost, "\$");
 g_opt
-w_opt
 obj
 T_cost
