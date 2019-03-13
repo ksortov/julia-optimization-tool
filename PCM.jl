@@ -19,7 +19,7 @@ c_w = [0,0,0,0,0,5,5,0];
 # Wind forecast
 w_f = [0,0,0,0,0,200,0,0]; #Change this for a wind forecast curve
 #Largest time value
-const T=8760;
+const T=24;
 
 #Number of nodes
 N=8;
@@ -89,14 +89,15 @@ g_opt=zeros(N,T);
 w_opt=zeros(N,T);
 ws_opt=zeros(N,T);
 obj=zeros(1,T);
+v_opt=zeros(N,T);
 
 for t in 1:T
 
-    dem = [50+7*sin(7*pi*t/24)+10*cos(2*pi*t/8760)
+    dem = [500+7*sin(7*pi*t/24)+10*cos(2*pi*t/8760)
             0
+            0           #CORRECT DEMAND CURVES
+            100+2sin(2*pi*t/24)+8sin(2*pi*t/8760)
             0
-            0
-            10+2sin(2*pi*t/24)+8sin(2*pi*t/8760)
             0
             0
             0];
@@ -126,15 +127,12 @@ for t in 1:T
         @constraint(ed, v_nt[i] >= v_min)
     end
 
-    # Define the power balance constraint
-    #@constraint(ed, sum(g[i] for i=1:N if GB[i]==1) + sum(w[i] for i=1:N if WB[i]==1) == dem[t])
-
     #Define power flow/balance
     for i in 1:N
         if LB[i] == 1 || GB[i] == 1
             @NLconstraint(ed, sum((v_nt[i] - v_nt[k]) * v_nt[i] * Y[i,k] * L[i,k] for k=1:N) == (g[i]-dem[i]));
-        else
-        @constraint(ed, g[i] == 0)
+        #else
+        #@constraint(ed, g[i] == 0)
         end
     end
 
@@ -145,9 +143,13 @@ for t in 1:T
     for i=1:N
         if GB[i]==1
             g_opt[i,t]=getvalue(g[i])
+            v_opt[i,t]=getvalue(v_nt[i])
         elseif WB[i]==1
             w_opt[i,t]=getvalue(w[i])
             ws_opt[i,t]=w_f[i]-getvalue(w[i])
+            v_opt[i,t]=getvalue(v_nt[i])
+        elseif LB[i]==1
+            v_opt[i,t]=getvalue(v_nt[i])
         end
     end
     obj[t]=getobjectivevalue(ed)
@@ -162,5 +164,6 @@ T_cost=sum(obj[t] for t=1:T)
 #println("Hourly cost: ", obj, " \$");
 #println("Total cost: ", T_cost, "\$");
 g_opt
-obj
-T_cost
+v_opt
+#obj
+#T_cost

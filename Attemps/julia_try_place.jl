@@ -62,3 +62,14 @@ println("Dispatch of Wind: ", w_opt, " MW")
 println("Wind spillage: ", w_f-w_opt, " MW")
 println("\n")
 println("Total cost: ", obj, "\$")
+
+
+using DataFrames
+using CSV
+
+
+g_opt=ones(8,24);
+w_opt=zeros(8,24);
+v_opt=50*ones(8,24);
+obj=2*ones(1,24);
+df=DataFrames(g_opt);
