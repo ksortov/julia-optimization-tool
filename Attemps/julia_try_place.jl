@@ -67,9 +67,23 @@ println("Total cost: ", obj, "\$")
 using DataFrames
 using CSV
 
+T=24;
+N=8;
 
-g_opt=ones(8,24);
-w_opt=zeros(8,24);
-v_opt=50*ones(8,24);
-obj=2*ones(1,24);
-df=DataFrames(g_opt);
+g_opt=ones(N,T);
+w_opt=zeros(N,T);
+v_opt=50*ones(N,T);
+obj=2*ones(1,T);
+
+out_file=[  "Hydro generation" fill(-, 1, T-1)
+            g_opt
+            "Wind generation" fill(-, 1, T-1)
+            w_opt
+            "Voltage levels" fill(-, 1, T-1)
+            v_opt
+            "Hourly cost" fill(-, 1, T-1)
+            obj]
+
+# Write outputs to csv files (add file path before file name)
+#CSV.write("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/outputs/links_out.csv", DataFrame(getvalue(x_nm)), append = true)
+CSV.write("/Users/Antoine/Documents/pcm_out.csv", DataFrame(out_file), append = true)

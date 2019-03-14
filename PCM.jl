@@ -4,6 +4,8 @@ using Interact # used for enabling the slider
 using Gadfly # used for plotting
 using Clp
 using Ipopt
+using DataFrames
+using CSV
 
 # Define some input data about the test system
 # Maximum power output of generators
@@ -93,10 +95,10 @@ v_opt=zeros(N,T);
 
 for t in 1:T
 
-    dem = [500+7*sin(7*pi*t/24)+10*cos(2*pi*t/8760)
+    dem = [50+7*sin(2*pi*t/24)+10*cos(2*pi*t/8760)
             0
-            0           #CORRECT DEMAND CURVES
-            100+2sin(2*pi*t/24)+8sin(2*pi*t/8760)
+            0
+            48+10*sin(2*pi*t/24)+ 38*cos(2*pi*t/8760)
             0
             0
             0
@@ -155,7 +157,7 @@ for t in 1:T
     obj[t]=getobjectivevalue(ed)
 end
 
-T_cost=sum(obj[t] for t=1:T)
+T_cost=sum(obj[t] for t=1:T);
 
 #println("Dispatch of Generators: ", g_opt, " MW");
 #println("Dispatch of Wind: ", w_opt, " MW");
@@ -165,5 +167,18 @@ T_cost=sum(obj[t] for t=1:T)
 #println("Total cost: ", T_cost, "\$");
 g_opt
 v_opt
-#obj
-#T_cost
+obj
+T_cost
+
+
+out_file=[  "Standard generation (MW)" fill(-, 1, T-1)
+            g_opt
+            "Wind generation (MW)" fill(-, 1, T-1)
+            w_opt
+            "Voltage levels (kV)" fill(-, 1, T-1)
+            v_opt
+            "Hourly cost (dollars)" fill(-, 1, T-1)
+            obj];
+
+# Write outputs to csv files (add file path before file name)
+CSV.write("/Users/Antoine/Documents/pcm_out.csv", DataFrame(out_file), append = true)
