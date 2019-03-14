@@ -18,10 +18,8 @@ const c_g = [0,7,2,0,0,0,0,0];
 const c_g0 = [0,0,0,0,0,0,0,0];
 # Incremental cost of wind generators
 c_w = [0,0,0,0,0,5,5,0];
-# Wind forecast
-w_f = [0,0,0,0,0,200,0,0]; #Change this for a wind forecast curve
 #Largest time value
-const T=24;
+const T=8760;
 
 #Number of nodes
 N=8;
@@ -50,12 +48,12 @@ for i=1:N
 end
 
 #Array of links
-L=[0 1 0 1 0 0 0 0
+L=[0 1 0 0 0 1 0 0
    1 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
+   0 0 0 0 0 0 0 0
+   0 0 0 0 0 0 0 0
    1 0 0 0 0 0 0 0
-   0 0 0 0 0 0 0 0
-   0 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0];
 
@@ -64,28 +62,16 @@ L=[0 1 0 1 0 0 0 0
 GB=[0,1,0,0,0,0,0,0];#This is/could essentially be a boolean
 
 #Which nodes can consume Power
-LB=[1,0,0,1,0,0,0,0]
+LB=[1,0,0,0,0,0,0,0]
 
 #Wind array
 #Which nodes can supply Wind
-WB=[0,0,0,0,0,0,0,0];#Also essentially a boolean
+WB=[0,0,0,0,0,1,0,0];#Also essentially a boolean
 
 #voltage levels
 V_target = 500 #kV
 v_min=0.95*V_target;
 v_max=1.05*V_target;
-
-#Total demand at every hour
-#dem=[300 500 1500 900 1100 1300 1500 1400 1300 1200
-#     0   0   0    0   0    0    0    0    0    0
-#     0   0   0    0   0    0    0    0    0    0
-#     0   0   0    0   0    0    0    0    0    0
-#     0   0   0    0   0    0    0    0    0    0
-#     0   0   0    0   0    0    0    0    0    0
-#     0   0   0    0   0    0    0    0    0    0
-#     0   0   0    0   0    0    0    0    0    0];
-
-#dem = 50+7*sin(7*pi*t/24)+10*cos(2*pi*t/8760);
 
 g_opt=zeros(N,T);
 w_opt=zeros(N,T);
@@ -95,12 +81,22 @@ v_opt=zeros(N,T);
 
 for t in 1:T
 
-    dem = [50+7*sin(2*pi*t/24)+10*cos(2*pi*t/8760)
+    dem = [67*(0.8+0.05*sin(2*pi*t/24)+0.15*cos(2*pi*t/8760))
             0
             0
-            48+10*sin(2*pi*t/24)+ 38*cos(2*pi*t/8760)
             0
             0
+            0
+            0
+            0];
+
+    # Wind forecast
+    w_f = [0
+            0
+            0
+            0
+            0
+            40*(0.683+0.317*cos(2*pi*t/8760+2*pi/24))
             0
             0];
 
@@ -131,8 +127,8 @@ for t in 1:T
 
     #Define power flow/balance
     for i in 1:N
-        if LB[i] == 1 || GB[i] == 1
-            @NLconstraint(ed, sum((v_nt[i] - v_nt[k]) * v_nt[i] * Y[i,k] * L[i,k] for k=1:N) == (g[i]-dem[i]));
+        if LB[i] == 1 || GB[i] == 1 || WB[i] == 1
+            @NLconstraint(ed, sum((v_nt[i] - v_nt[k]) * v_nt[i] * Y[i,k] * L[i,k] for k=1:N) == (g[i]+w[i]-dem[i]));
         #else
         #@constraint(ed, g[i] == 0)
         end
@@ -166,6 +162,7 @@ T_cost=sum(obj[t] for t=1:T);
 #println("Hourly cost: ", obj, " \$");
 #println("Total cost: ", T_cost, "\$");
 g_opt
+w_opt
 v_opt
 obj
 T_cost
@@ -181,4 +178,4 @@ out_file=[  "Standard generation (MW)" fill(-, 1, T-1)
             obj];
 
 # Write outputs to csv files (add file path before file name)
-CSV.write("/Users/Antoine/Documents/pcm_out.csv", DataFrame(out_file), append = true)
+#CSV.write("/Users/Antoine/Documents/pcm_out.csv", DataFrame(out_file), append = true)
