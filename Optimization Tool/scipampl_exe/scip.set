@@ -614,11 +614,11 @@ numerics/lpfeastol = 1e-03
 
 # feasibility tolerance for reduced costs in LP solution
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-07]
-numerics/dualfeastol = 1e-05
+numerics/dualfeastol = 1e-07
 
 # LP convergence tolerance used in barrier algorithm
 # [type: real, advanced: TRUE, range: [1e-17,0.001], default: 1e-10]
-numerics/barrierconvtol = 1e-8
+numerics/barrierconvtol = 1e-08
 
 # minimal relative improve for strengthening bounds
 # [type: real, advanced: TRUE, range: [1e-17,1e+98], default: 0.05]
@@ -6022,7 +6022,7 @@ heuristics/mpec/minimprove = 0.01
 
 # minimum amount of gap left in order to call the heuristic
 # [type: real, advanced: FALSE, range: [0,1e+20], default: 0.05]
-heuristics/mpec/mingapleft = 1
+heuristics/mpec/mingapleft = 0.05
 
 # maximum number of iterations of the MPEC loop
 # [type: int, advanced: FALSE, range: [0,2147483647], default: 100]
@@ -6290,7 +6290,7 @@ heuristics/proximity/lpitersquot = 0.2
 
 # minimum primal-dual gap for which the heuristic is executed
 # [type: real, advanced: TRUE, range: [0,1e+20], default: 0.01]
-heuristics/proximity/mingap = 1
+heuristics/proximity/mingap = 0.5
 
 # should uct node selection be used at the beginning of the search?
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]

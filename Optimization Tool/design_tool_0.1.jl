@@ -10,7 +10,7 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
-inputs = CSV.read("C:/Users/kevin/Desktop/scenarios/scenario1_1.csv") # Read input csv file
+inputs = CSV.read("C:/Users/kevin/Desktop/scenarios/force_wind.csv") # Read input csv file
 node_num = length(inputs[1]) # number of nodes considered in given scenario
 
 # Define sets
@@ -18,10 +18,10 @@ V = 2 # total number of potential voltage levels
 N = node_num # total number of nodes
 T = 12 # largest time value (hour)
 A = 1000 # large number used for dummy variable constraints
-L = inputs[47:47+node_num-1] # array of possible links (L[n,m] = 1 if there can be links b/w n & m)
+L = inputs[47:54] # array of possible links (L[n,m] = 1 if there can be links b/w n & m)
 
 # Define parameters
-d_nm = inputs[47+node_num:47+2*node_num-1] # distances between nodes n & m (km)
+d_nm = inputs[55:62] # distances between nodes n & m (km)
 a_v = inputs[40] # cost of links ($/km)
 b_v = inputs[41] # cost of substation ($/station)
 r_v = inputs[42] # resistance on link (ohm/km)
@@ -74,7 +74,7 @@ end
 # Power balance at a node and power injection/ wind generation
 for t in 1:T
     for n in 1:N
-        @constraint(mod, g_nt[n,t] + del_nt[n,t] == dem_nt[n,t] + sum(p_nmt[n,m,t] for m in 1:N if L[n,m] == 1)) #power balance at a node
+        @constraint(mod, sum(p_nmt[n,m,t] for m in 1:N if L[n,m] == 1) == g_nt[n,t] + del_nt[n,t] - dem_nt[n,t]) #power balance at a node
     end
     @constraint(mod, sum(p_nmt[n,m,t] for n in 1:N for m in 1:N) == 0) # power balance of the system
 end
@@ -84,7 +84,7 @@ for n in 1:N
     for m in 1:N
         for t in 1:T
             if L[n,m] == 1
-                @NLconstraint(mod, (p_nmt[n,m,t]) == sum((alpha_vnm[v,n,m]/r_v[v])*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t] for v in 1:V))
+                @NLconstraint(mod, (p_nmt[n,m,t]) == sum((alpha_vnm[v,n,m]/(d_nm[n,m]*r_v[v]))*(u_nt[n,t] - u_nt[m,t])*u_nt[n,t] for v in 1:V))
             end
         end
     end
@@ -152,3 +152,9 @@ println("u_nt = ", getvalue(u_nt))
 println("z_n = ", getvalue(z_n.'))
 println("sub_num = ", getvalue(sub_num.'))
 println("Objective value = ", getobjectivevalue(mod))
+
+getvalue(x_nm)
+getvalue(g_nt)
+getvalue(del_nt)
+getvalue(p_nmt)
+getvalue(u_nt)
