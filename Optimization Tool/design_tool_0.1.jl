@@ -60,6 +60,12 @@ end)
 
 # Add constraints
 
+# Forced links
+# @constraint(mod, x_nm[1,2] == 1)
+# @constraint(mod, x_nm[2,1] == 1)
+# @constraint(mod, x_nm[4,8] == 1)
+# @constraint(mod, x_nm[8,4] == 1)
+
 # Decision to add generation (z_n boolean)
 for n in 1:N
     for t in 1:T

@@ -23,8 +23,8 @@
 # We refer the curious user of Couenne to this paper for more insight
 # on how the options are used.
 
-# cpu time limit seeting
-time_limit 3000 # 3000 for 8760 hours (depends on machine performance)
+# cpu time limit setting
+time_limit 500 # 3000 for 8760 hours (depends on machine performance)
 
 #
 # Verbosity/output level options
@@ -281,7 +281,7 @@ violated_cuts_only yes
 #opt_window
 
 # Artificial lower bound
-#art_lower 0
+art_lower 0
 
 
 #
@@ -312,7 +312,7 @@ log_num_local_optimization_per_level 1
 # A solution is feasible for the original problem if the maximum
 # violation of a constraint is below this number
 
-feas_tolerance 1e-3
+feas_tolerance 1e-2
 
 
 # Use quadratic expressions and related exprQuad class
