@@ -442,7 +442,7 @@ lp/rowrepswitch = 1.2
 
 # number of threads used for solving the LP (0: automatic)
 # [type: int, advanced: TRUE, range: [0,64], default: 0]
-lp/threads = 0
+lp/threads = 8
 
 # factor of average LP iterations that is used as LP iteration limit for LP resolve (-1: unlimited)
 # [type: real, advanced: TRUE, range: [-1,1.79769313486232e+308], default: -1]
@@ -558,7 +558,7 @@ misc/allowobjprop = TRUE
 
 # objective value for reference purposes
 # [type: real, advanced: FALSE, range: [-1.79769313486232e+308,1.79769313486232e+308], default: 1e+99]
-misc/referencevalue = 1e+99
+misc/referencevalue = 1e+10
 
 # used symmetry handling technique (0: off; 1: polyhedral; 2: orbital fixing)
 # [type: int, advanced: FALSE, range: [0,2], default: 2]
@@ -614,11 +614,11 @@ numerics/lpfeastol = 1e-03
 
 # feasibility tolerance for reduced costs in LP solution
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-07]
-numerics/dualfeastol = 1e-03
+numerics/dualfeastol = 1e-10
 
 # LP convergence tolerance used in barrier algorithm
 # [type: real, advanced: TRUE, range: [1e-17,0.001], default: 1e-10]
-numerics/barrierconvtol = 1e-03
+numerics/barrierconvtol = 1e-10
 
 # minimal relative improve for strengthening bounds
 # [type: real, advanced: TRUE, range: [1e-17,1e+98], default: 0.05]
@@ -910,7 +910,7 @@ parallel/mode = 1
 
 # the minimum number of threads used during parallel solve
 # [type: int, advanced: FALSE, range: [0,64], default: 1]
-parallel/minnthreads = 1
+parallel/minnthreads = 4
 
 # the maximum number of threads used during parallel solve
 # [type: int, advanced: FALSE, range: [0,64], default: 8]
@@ -936,7 +936,7 @@ concurrent/presolvebefore = TRUE
 # [type: int, advanced: FALSE, range: [0,2147483647], default: 5131912]
 concurrent/initseed = 5131912
 
-# initial frequency of synchronization with other threads
+# initial frequency of synchronization with other
 # [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 10]
 concurrent/sync/freqinit = 10
 
@@ -3966,7 +3966,7 @@ branching/random/maxbounddist = 1
 
 # initial random seed value
 # [type: int, advanced: FALSE, range: [0,2147483647], default: 41]
-branching/random/seed = 41
+branching/random/seed = 1.7e9
 
 # priority of branching rule <relpscost>
 # [type: int, advanced: FALSE, range: [-536870912,536870911], default: 10000]

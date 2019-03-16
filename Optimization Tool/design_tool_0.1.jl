@@ -10,7 +10,7 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
-inputs = CSV.read("C:/Users/kevin/Desktop/scenarios/force_wind.csv") # Read input csv file
+inputs = CSV.read("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scenarios/force_wind.csv") # Read input csv file
 node_num = length(inputs[1]) # number of nodes considered in given scenario
 
 # Define sets
@@ -47,6 +47,7 @@ end
     u_nt[1:N, 1:T] # voltage @ node n & time t (kV)
     z_n[1:N], Bin # boolean for new generation construction decision
     sub_num, Int # number of substations to build
+    l_count[1:N], Bin
     y_v[1:V], Bin # boolean for selected voltage
     alpha_vnm[1:V, 1:N, 1:N], Int # dummy variable for linearization
 end)
@@ -70,12 +71,16 @@ end)
 for n in 1:N
     for t in 1:T
         @constraint(mod, g_nt[n,t] == z_n[n]*g_nt[n,t])
-        @constraint(mod, z_n[n] <= g_nt[n,t])
+        #@constraint(mod, z_n[n] <= g_nt[n,t])
     end
 end
 
 # Number of substations to build (1 per linked node)
-@constraint(mod, sub_num == sum(x_nm[n,m] for n in 2:N for m in 1:N) + 1)
+for n in 1:N
+    @constraint(mod, l_count[n] == sum(x_nm[n,]))
+end
+@constraint(mod, sub_num == sum(l_count[n] for n in 1:N))
+#@constraint(mod, sub_num == sum(x_nm[n,m] for n in 2:N for m in 1:N) + 1)
 
 # Power balance at a node and power injection/ wind generation
 for t in 1:T
