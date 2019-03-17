@@ -7,9 +7,9 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 
 # Define solver used in the optimization problem
 # Currently using SCIP
-mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/couenne-win64/couenne.exe"))
-#mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
-#["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
+#mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/couenne-win64/couenne.exe"))
+mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
+["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
 inputs = CSV.read("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scenarios/force_wind.csv") # Read input csv file
 node_num = length(inputs[1]) # number of nodes considered in given scenario
@@ -57,7 +57,7 @@ end)
 @objective(mod, Min, sum(alpha_vnm[v,n,m]*a_v[v]*d_nm[n,m] for v in 1:V for n in 1:N for m in 1:N if n < m) # cost of links
 + sum(sub_num*y_v[v]*b_v[v] for v in 1:V) # cost of substations
 + sum(c_n[n]*z_n[n] for n in 1:N) # cost of generation construction
-+ sum(24*(365/12)*25*lambda_n[n]*(g_nt[n,t] + del_nt[n,t]) for n in 1:N for t in 1:T)) # cost of operations
++ sum(lambda_n[n]*(g_nt[n,t] + del_nt[n,t]) for n in 1:N for t in 1:T)) # cost of operations
 #sum((1/((1+dr)^t))*(9e6*lambda_n[n]*(g_nt[n,t] + del_nt[n,t])) for n in 1:N for t in 1:T)) # NPV
 
 # Add constraints
@@ -121,8 +121,12 @@ end
 # Voltage bounds constraint
 for n in 1:N
     for t in 1:T
-        @constraint(mod, (u_nt[n,t]) >= sum(fmin*f_v[v]*y_v[v] for v in 1:V)) # lower bound
-        @constraint(mod, (u_nt[n,t]) <= sum(fmax*f_v[v]*y_v[v] for v in 1:V)) # upper bound
+        if n != 5
+            @constraint(mod, (u_nt[n,t]) >= sum(fmin*f_v[v]*y_v[v] for v in 1:V)) # lower bound
+            @constraint(mod, (u_nt[n,t]) <= sum(fmax*f_v[v]*y_v[v] for v in 1:V)) # upper bound
+        elseif n == 5
+            @constraint(mod, u_nt[n,t] == 0)
+        end
     end
 end
 

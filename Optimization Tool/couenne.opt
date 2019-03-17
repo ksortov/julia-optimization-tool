@@ -24,7 +24,7 @@
 # on how the options are used.
 
 # cpu time limit setting
-time_limit 500 # 3000 for 8760 hours (depends on machine performance)
+time_limit 750 # 3000 for 8760 hours (depends on machine performance)
 
 #
 # Verbosity/output level options
@@ -312,7 +312,7 @@ log_num_local_optimization_per_level 1
 # A solution is feasible for the original problem if the maximum
 # violation of a constraint is below this number
 
-feas_tolerance 1e-2
+feas_tolerance 1e-3
 
 
 # Use quadratic expressions and related exprQuad class
