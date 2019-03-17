@@ -7,8 +7,9 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 
 # Define solver used in the optimization problem
 # Currently using SCIP
-mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
-["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
+mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/couenne-win64/couenne.exe"))
+#mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
+#["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
 inputs = CSV.read("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scenarios/force_wind.csv") # Read input csv file
 node_num = length(inputs[1]) # number of nodes considered in given scenario
@@ -29,8 +30,8 @@ f_v = inputs[39] # voltage level in (kV), also voltage base
 p_v = inputs[43] # power capacity of a link (MW)
 dem_nt = inputs[25:36] # power demand @ node n & time t (MW)
 lambda_n = inputs[38]
-fmax = 1.05 # maximum voltage value for nodes (pu)
-fmin = 0.95 # minimum voltage value for nodes (pu)
+fmax = 1.2 # maximum voltage value for nodes (pu)
+fmin = 0.8 # minimum voltage value for nodes (pu)
 dr = 0.1 # discount rate
 w = 3000 # marginal cost of adding wind genration ($/MW)
 c_n = zeros(Float64, N)

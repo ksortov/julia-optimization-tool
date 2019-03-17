@@ -614,11 +614,11 @@ numerics/lpfeastol = 1e-03
 
 # feasibility tolerance for reduced costs in LP solution
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-07]
-numerics/dualfeastol = 1e-10
+numerics/dualfeastol = 1e-17
 
 # LP convergence tolerance used in barrier algorithm
 # [type: real, advanced: TRUE, range: [1e-17,0.001], default: 1e-10]
-numerics/barrierconvtol = 1e-10
+numerics/barrierconvtol = 1e-03
 
 # minimal relative improve for strengthening bounds
 # [type: real, advanced: TRUE, range: [1e-17,1e+98], default: 0.05]
@@ -6290,7 +6290,7 @@ heuristics/proximity/lpitersquot = 0.2
 
 # minimum primal-dual gap for which the heuristic is executed
 # [type: real, advanced: TRUE, range: [0,1e+20], default: 0.01]
-heuristics/proximity/mingap = 0.5
+heuristics/proximity/mingap = 0.01
 
 # should uct node selection be used at the beginning of the search?
 # [type: bool, advanced: TRUE, range: {TRUE,FALSE}, default: FALSE]
