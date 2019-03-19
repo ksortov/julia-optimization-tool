@@ -11,7 +11,8 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
-inputs = CSV.read("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scenarios/force_wind.csv") # Read input csv file
+inputs = CSV.read("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scenarios/wind_diesel.csv") # Read input csv file
+init_guess = CSV.read("C:/Users/kevin/Desktop/guesses.csv")
 node_num = length(inputs[1]) # number of nodes considered in given scenario
 
 # Define sets
@@ -53,6 +54,14 @@ end
     alpha_vnm[1:V, 1:N, 1:N], Int # dummy variable for linearization
 end)
 
+# Initial guess for the topology x_nm
+for n in 1:N
+    for m in 1:N
+        setvalue(x_nm[n,m], init_guess[n,m])
+    end
+end
+setvalue(sub_num, 2)
+
 # Define objective function to minimize
 @objective(mod, Min, sum(alpha_vnm[v,n,m]*a_v[v]*d_nm[n,m] for v in 1:V for n in 1:N for m in 1:N if n < m) # cost of links
 + sum(sub_num*y_v[v]*b_v[v] for v in 1:V) # cost of substations
@@ -72,7 +81,7 @@ end)
 for n in 1:N
     for t in 1:T
         @constraint(mod, g_nt[n,t] == z_n[n]*g_nt[n,t])
-        #@constraint(mod, z_n[n] <= g_nt[n,t])
+        @constraint(mod, z_n[n] <= g_nt[n,t])
     end
 end
 
@@ -121,12 +130,12 @@ end
 # Voltage bounds constraint
 for n in 1:N
     for t in 1:T
-        if n != 5
+        #if n != 5
             @constraint(mod, (u_nt[n,t]) >= sum(fmin*f_v[v]*y_v[v] for v in 1:V)) # lower bound
             @constraint(mod, (u_nt[n,t]) <= sum(fmax*f_v[v]*y_v[v] for v in 1:V)) # upper bound
-        elseif n == 5
-            @constraint(mod, u_nt[n,t] == 0)
-        end
+        # elseif n == 5
+        #     @constraint(mod, u_nt[n,t] == 0)
+        # end
     end
 end
 
