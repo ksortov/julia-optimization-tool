@@ -594,15 +594,15 @@ numerics/infinity = 1e+20
 
 # absolute values smaller than this are considered zero
 # [type: real, advanced: FALSE, range: [1e-20,0.001], default: 1e-09]
-numerics/epsilon = 1e-03
+numerics/epsilon = 1e-09
 
 # absolute values of sums smaller than this are considered zero
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
-numerics/sumepsilon = 1e-03
+numerics/sumepsilon = 1e-06
 
 # feasibility tolerance for constraints
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
-numerics/feastol = 1e-03
+numerics/feastol = 1e-06
 
 # feasibility tolerance factor; for checking the feasibility of the best solution
 # [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 1]
@@ -610,11 +610,11 @@ numerics/checkfeastolfac = 1
 
 # primal feasibility tolerance of LP solver
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
-numerics/lpfeastol = 1e-06
+numerics/lpfeastol = 1e-06 #(-06)
 
 # feasibility tolerance for reduced costs in LP solution
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-07]
-numerics/dualfeastol = 1e-07
+numerics/dualfeastol = 1e-08 #(-08)
 
 # LP convergence tolerance used in barrier algorithm
 # [type: real, advanced: TRUE, range: [1e-17,0.001], default: 1e-10]

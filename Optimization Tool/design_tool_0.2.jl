@@ -10,7 +10,8 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
-inputs = CSV.read("C:/Users/kevin/Desktop/scenarios/force_wind2.csv") # Read input csv file
+inputs = CSV.read("C:/Users/kevin/Desktop/wind_diesel2.csv") # Read input csv file
+init_guess = CSV.read("C:/Users/kevin/Desktop/guesses.csv")
 node_num = length(inputs[1]) # number of nodes considered in given scenario
 
 # Define sets
@@ -46,10 +47,19 @@ end
     p_nmt[1:N, 1:N, 1:T] # power flow b/w nodes n & m @ time t (MW)
     u_nt[1:N, 1:T] # voltage @ node n & time t (kV)
     z_n[1:N], Bin # boolean for new generation construction decision
+    is_sub[1:N], Bin # intermediate variable used to count substations
     sub_num, Int # number of substations to build
     y_v[1:V], Bin # boolean for selected voltage
     alpha_vnm[1:V, 1:N, 1:N], Int # dummy variable for linearization
 end)
+
+# Initial guess for the topology x_nm
+# for n in 1:N
+#     for m in 1:N
+#         setvalue(x_nm[n,m], init_guess[n,m])
+#     end
+# end
+# setvalue(sub_num, 2)
 
 # Define objective function to minimize
 @objective(mod, Min, sum(alpha_vnm[v,n,m]*a_v[v]*d_nm[n,m] for v in 1:V for n in 1:N for m in 1:N if n < m) # cost of links
@@ -69,14 +79,18 @@ for n in 1:N
 end
 
 # Number of substations to build (1 per linked node)
-@constraint(mod, sub_num == sum(x_nm[n,m] for n in 2:N for m in 1:N) + 1)
+for n in 1:N
+    @constraint(mod, is_sub[n] == sum(x_nm[n,m] for m in 1:N))
+end
+@constraint(mod, sub_num == sum(is_sub[n] for n in 1:N))
+#@constraint(mod, sub_num == sum(x_nm[n,m] for n in 2:N for m in 1:N) + 1)
 
 # Power balance at a node and power injection/ wind generation
 for t in 1:T
     for n in 1:N
         @constraint(mod, sum(p_nmt[n,m,t] for m in 1:N if L[n,m] == 1) == g_nt[n,t] + del_nt[n,t] - dem_nt[n,t]) #power balance at a node
     end
-    @constraint(mod, sum(p_nmt[n,m,t] for n in 1:N for m in 1:N) == 0) # power balance of the system
+    #@constraint(mod, sum(p_nmt[n,m,t] for n in 1:N for m in 1:N) == 0) # power balance of the system
 end
 
 # Power flow in a link constraint (nonlinear)
@@ -150,7 +164,7 @@ println("del_nt = ", getvalue(del_nt))
 println("p_nmt = ", getvalue(p_nmt))
 println("u_nt = ", getvalue(u_nt))
 println("z_n = ", getvalue(z_n.'))
-println("sub_num = ", getvalue(sub_num.'))
+println("sub_num = ", getvalue(sub_num))
 println("Objective value = ", getobjectivevalue(mod))
 
 getvalue(x_nm)
@@ -158,3 +172,4 @@ getvalue(g_nt)
 getvalue(del_nt)
 getvalue(p_nmt)
 getvalue(u_nt)
+getvalue(is_sub)
