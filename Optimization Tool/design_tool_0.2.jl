@@ -59,7 +59,6 @@ end)
 #         setvalue(x_nm[n,m], init_guess[n,m])
 #     end
 # end
-# setvalue(sub_num, 2)
 
 # Define objective function to minimize
 @objective(mod, Min, sum(alpha_vnm[v,n,m]*a_v[v]*d_nm[n,m] for v in 1:V for n in 1:N for m in 1:N if n < m) # cost of links
@@ -83,7 +82,6 @@ for n in 1:N
     @constraint(mod, is_sub[n] == sum(x_nm[n,m] for m in 1:N))
 end
 @constraint(mod, sub_num == sum(is_sub[n] for n in 1:N))
-#@constraint(mod, sub_num == sum(x_nm[n,m] for n in 2:N for m in 1:N) + 1)
 
 # Power balance at a node and power injection/ wind generation
 for t in 1:T

@@ -290,7 +290,7 @@ limits/memory = 8796093022208
 
 # solving stops, if the relative gap = |primal - dual|/MIN(|dual|,|primal|) is below the given value
 # [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 0]
-limits/gap = 0.25
+limits/gap = 0.5
 
 # solving stops, if the absolute gap = |primalbound - dualbound| is below the given value
 # [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 0]
