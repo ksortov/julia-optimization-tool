@@ -10,7 +10,7 @@ using JuMP, Clp, Ipopt, AmplNLWriter, CSV, DataFrames
 mod = Model(solver = AmplNLSolver("C:/Users/kevin/Desktop/Design_Project/julia-optimization-tool/Optimization Tool/scipampl_exe/scipampl-6.0.0.win.x86_64.intel.opt.spx2.exe",
 ["C:/Users/kevin/Desktop/Design_Project//julia-optimization-tool/Optimization Tool/scipampl_exe/scip.set"]))
 
-inputs = CSV.read("C:/Users/kevin/Desktop/wind_diesel2.csv") # Read input csv file
+inputs = CSV.read("C:/Users/kevin/Desktop/force_wind3.csv") # Read input csv file
 init_guess = CSV.read("C:/Users/kevin/Desktop/guesses.csv")
 node_num = length(inputs[1]) # number of nodes considered in given scenario
 
@@ -173,3 +173,4 @@ getvalue(del_nt)
 getvalue(p_nmt)
 getvalue(u_nt)
 getvalue(is_sub)
+# 675.43 s
