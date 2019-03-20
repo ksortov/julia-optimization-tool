@@ -67,6 +67,10 @@ end)
 + sum(24*(365/12)*25*lambda_n[n]*(g_nt[n,t] + del_nt[n,t]) for n in 1:N for t in 1:T)) # cost of operations
 #sum((1/((1+dr)^t))*(9e6*lambda_n[n]*(g_nt[n,t] + del_nt[n,t])) for n in 1:N for t in 1:T)) # NPV
 
+# Force links
+@constraint(mod, x_nm[1,4] == 1)
+@constraint(mod, x_nm[4,1] == 1)
+
 # Add constraints
 
 # Decision to add generation (z_n boolean)
