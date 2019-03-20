@@ -9,11 +9,11 @@ using CSV
 
 # Define some input data about the test system
 # Maximum power output of generators
-const g_max = [0,100000,1000,0,0,0,0,0];
+const g_max = [0,100000,1000,0,0,0,0,500];
 # Minimum power output of generators
 const g_min = [0,0,0,0,0,0,0,0];
 # Incremental cost of generators
-const c_g = [0,7,2,0,0,0,0,0];
+const c_g = [0,7,2,0,0,0,0,6];
 # Fixed cost of generators
 const c_g0 = [0,0,0,0,0,0,0,0];
 # Incremental cost of wind generators
@@ -48,21 +48,21 @@ for i=1:N
 end
 
 #Array of links
-L=[0 1 0 0 0 1 0 0
+L=[0 0 0 0 0 1 0 0
+   0 0 0 0 0 0 0 0
+   0 0 0 0 0 0 0 0
+   0 0 0 0 0 0 0 1
+   0 0 0 0 0 0 0 0
    1 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
-   0 0 0 0 0 0 0 0
-   0 0 0 0 0 0 0 0
-   1 0 0 0 0 0 0 0
-   0 0 0 0 0 0 0 0
-   0 0 0 0 0 0 0 0];
+   0 0 0 1 0 0 0 0];
 
 #Generator Array
 #Which nodes can supply power through already existing generation
-GB=[0,1,0,0,0,0,0,0];#This is/could essentially be a boolean
+GB=[0,0,0,0,0,0,0,1];#This is/could essentially be a boolean
 
 #Which nodes can consume Power
-LB=[1,0,0,0,0,0,0,0]
+LB=[1,0,0,1,0,0,0,0]
 
 #Wind array
 #Which nodes can supply Wind
@@ -84,7 +84,7 @@ for t in 1:T
     dem = [67*(0.8+0.05*sin(2*pi*t/24)+0.15*cos(2*pi*t/8760))
             0
             0
-            0
+            480*(0.8+0.05*sin(2*pi*t/24)+0.15*cos(2*pi*t/8760+pi))
             0
             0
             0
@@ -96,7 +96,7 @@ for t in 1:T
             0
             0
             0
-            40*(0.683+0.317*cos(2*pi*t/8760+2*pi/24))
+            130*(0.683+0.317*cos(2*pi*t/8760+2*pi/24))
             0
             0];
 
@@ -166,7 +166,6 @@ w_opt
 v_opt
 obj
 T_cost
-
 
 out_file=[  "Standard generation (MW)" fill(-, 1, T-1)
             g_opt
