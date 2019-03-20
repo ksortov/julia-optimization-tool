@@ -54,11 +54,11 @@ end
 end)
 
 # Initial guess for the topology x_nm
-# for n in 1:N
-#     for m in 1:N
-#         setvalue(x_nm[n,m], init_guess[n,m])
-#     end
-# end
+for n in 1:N
+    for m in 1:N
+        setvalue(x_nm[n,m], init_guess[n,m])
+    end
+end
 
 # Define objective function to minimize
 @objective(mod, Min, sum(alpha_vnm[v,n,m]*a_v[v]*d_nm[n,m] for v in 1:V for n in 1:N for m in 1:N if n < m) # cost of links
@@ -67,9 +67,12 @@ end)
 + sum(24*(365/12)*25*lambda_n[n]*(g_nt[n,t] + del_nt[n,t]) for n in 1:N for t in 1:T)) # cost of operations
 #sum((1/((1+dr)^t))*(9e6*lambda_n[n]*(g_nt[n,t] + del_nt[n,t])) for n in 1:N for t in 1:T)) # NPV
 
-# Force links
-@constraint(mod, x_nm[1,4] == 1)
-@constraint(mod, x_nm[4,1] == 1)
+# Force links/wind
+#@constraint(mod, x_nm[1,4] == 1)
+#@constraint(mod, x_nm[4,1] == 1)
+for t in 1:T
+    @constraint(mod, g_nt[4,t] >= 1)
+end
 
 # Add constraints
 

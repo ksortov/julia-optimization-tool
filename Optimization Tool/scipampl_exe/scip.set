@@ -594,11 +594,11 @@ numerics/infinity = 1e+20
 
 # absolute values smaller than this are considered zero
 # [type: real, advanced: FALSE, range: [1e-20,0.001], default: 1e-09]
-numerics/epsilon = 1e-09
+numerics/epsilon = 1e-03
 
 # absolute values of sums smaller than this are considered zero
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
-numerics/sumepsilon = 1e-06
+numerics/sumepsilon = 1e-03
 
 # feasibility tolerance for constraints
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
@@ -610,7 +610,7 @@ numerics/checkfeastolfac = 1
 
 # primal feasibility tolerance of LP solver
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
-numerics/lpfeastol = 1e-06 #(-06)
+numerics/lpfeastol = 1e-17 #(-06)
 
 # feasibility tolerance for reduced costs in LP solution
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-07]
