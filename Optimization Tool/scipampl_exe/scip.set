@@ -614,7 +614,7 @@ numerics/lpfeastol = 1e-06 #(-06)
 
 # feasibility tolerance for reduced costs in LP solution
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-07]
-numerics/dualfeastol = 1e-10 #(-08)
+numerics/dualfeastol = 1e-07 #(-08, -10)
 
 # LP convergence tolerance used in barrier algorithm
 # [type: real, advanced: TRUE, range: [1e-17,0.001], default: 1e-10]
