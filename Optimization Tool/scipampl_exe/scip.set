@@ -602,7 +602,7 @@ numerics/sumepsilon = 1e-03
 
 # feasibility tolerance for constraints
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
-numerics/feastol = 1e-06
+numerics/feastol = 1e-03
 
 # feasibility tolerance factor; for checking the feasibility of the best solution
 # [type: real, advanced: FALSE, range: [0,1.79769313486232e+308], default: 1]
@@ -614,7 +614,7 @@ numerics/lpfeastol = 1e-17 #(-06)
 
 # feasibility tolerance for reduced costs in LP solution
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-07]
-numerics/dualfeastol = 1e-07 #(-08, -10)
+numerics/dualfeastol = 1e-12 #(-08, -10)
 
 # LP convergence tolerance used in barrier algorithm
 # [type: real, advanced: TRUE, range: [1e-17,0.001], default: 1e-10]
