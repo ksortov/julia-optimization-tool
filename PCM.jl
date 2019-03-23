@@ -48,10 +48,10 @@ for i=1:N
 end
 
 #Array of links
-L=[0 0 0 0 0 1 0 0
+L=[0 0 0 1 0 1 0 0
    0 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
-   0 0 0 0 0 0 0 1
+   1 0 0 0 0 0 0 1
    0 0 0 0 0 0 0 0
    1 0 0 0 0 0 0 0
    0 0 0 0 0 0 0 0
@@ -96,7 +96,7 @@ for t in 1:T
             0
             0
             0
-            130*(0.683+0.317*cos(2*pi*t/8760+2*pi/24))
+            300*(0.683+0.317*cos(2*pi*t/8760+2*pi/24))
             0
             0];
 
@@ -161,6 +161,7 @@ T_cost=sum(obj[t] for t=1:T);
 #println("\n");
 #println("Hourly cost: ", obj, " \$");
 #println("Total cost: ", T_cost, "\$");
+
 g_opt
 w_opt
 v_opt
