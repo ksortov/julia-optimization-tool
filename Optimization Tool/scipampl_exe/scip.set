@@ -558,7 +558,7 @@ misc/allowobjprop = TRUE
 
 # objective value for reference purposes
 # [type: real, advanced: FALSE, range: [-1.79769313486232e+308,1.79769313486232e+308], default: 1e+99]
-misc/referencevalue = 6e+08
+misc/referencevalue = 2.35e+09
 
 # used symmetry handling technique (0: off; 1: polyhedral; 2: orbital fixing)
 # [type: int, advanced: FALSE, range: [0,2], default: 2]
@@ -610,7 +610,7 @@ numerics/checkfeastolfac = 1
 
 # primal feasibility tolerance of LP solver
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-06]
-numerics/lpfeastol = 1e-17 #(-06)
+numerics/lpfeastol = 1e-08 #(-06)
 
 # feasibility tolerance for reduced costs in LP solution
 # [type: real, advanced: FALSE, range: [1e-17,0.001], default: 1e-07]
