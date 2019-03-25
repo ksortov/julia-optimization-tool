@@ -9,11 +9,11 @@ using CSV
 
 # Define some input data about the test system
 # Maximum power output of generators
-const g_max = [0,100000,1000,0,0,0,0,500];
+const g_max = [0,80,1000,0,0,0,0,500];
 # Minimum power output of generators
 const g_min = [0,0,0,0,0,0,0,0];
 # Incremental cost of generators
-const c_g = [0,7,2,0,0,0,0,6];
+const c_g = [0,6,2,0,0,0,0,6];
 # Fixed cost of generators
 const c_g0 = [0,0,0,0,0,0,0,0];
 # Incremental cost of wind generators
@@ -48,14 +48,14 @@ for i=1:N
 end
 
 #Array of links
-L=[0 0 0 1 0 1 0 0
-   0 0 0 0 0 0 0 0
-   0 0 0 0 0 0 0 0
-   1 0 0 0 0 0 0 1
-   0 0 0 0 0 0 0 0
-   1 0 0 0 0 0 0 0
-   0 0 0 0 0 0 0 0
-   0 0 0 1 0 0 0 0];
+L=[0	0	0	0	0	0	0	1
+    0	0	0	0	0	0	0	0
+    0	0	0	0	0	0	0	0
+    0	0	0	0	0	1	0	0
+    0	0	0	0	0	0	0	0
+    0	0	0	1	0	0	0	0
+    0	0	0	0	0	0	0	0
+    1	0	0	0	0	0	0	0];
 
 #Generator Array
 #Which nodes can supply power through already existing generation
@@ -96,7 +96,7 @@ for t in 1:T
             0
             0
             0
-            300*(0.683+0.317*cos(2*pi*t/8760+2*pi/24))
+            930*(0.683+0.317*cos(2*pi*t/8760+2*pi/24))
             0
             0];
 
