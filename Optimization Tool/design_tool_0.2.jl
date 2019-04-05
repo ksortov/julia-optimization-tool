@@ -70,16 +70,17 @@ end)
 # Add constraints
 
 # Forced links
-@constraint(mod, x_nm[1,4] == 1)
-@constraint(mod, x_nm[4,1] == 1)
-@constraint(mod, x_nm[1,3] == 1)
-@constraint(mod, x_nm[3,1] == 1)
+#@constraint(mod, x_nm[1,4] == 1)
+#@constraint(mod, x_nm[4,1] == 1)
+#@constraint(mod, x_nm[1,3] == 1)
+#@constraint(mod, x_nm[3,1] == 1)
 
 # Decision to add generation (z_n boolean)
 for n in 1:N
     for t in 1:T
         @NLconstraint(mod, g_nt[n,t] == z_n[n]*g_nt[n,t]) # z_n[n] = 1 if g[n,t] > 0 for any t
         @constraint(mod, z_n[n] <= g_nt[n,t]) # ensures z_n[n] = 0 else
+            @constraint(mod, g_nt[4,t] >= 0.1)
     end
 end
 
