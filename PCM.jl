@@ -19,7 +19,8 @@ const c_g0 = [0,0,0,0,0,0,0,0];
 # Incremental cost of wind generators
 c_w = [0,0,0,0,0,5,5,0];
 #Largest time value
-const T=8760;
+const T=10;
+#year is 8760
 
 #Number of nodes
 N=8;
@@ -48,14 +49,14 @@ for i=1:N
 end
 
 #Array of links
-L=[0	0	0	0	0	0	0	1
+L=[0    0	0	1	0	1	0	0
     0	0	0	0	0	0	0	0
     0	0	0	0	0	0	0	0
-    0	0	0	0	0	1	0	0
+    1	0	0	0	0	0	0	1
     0	0	0	0	0	0	0	0
-    0	0	0	1	0	0	0	0
+    1	0	0	0	0	0	0   0
     0	0	0	0	0	0	0	0
-    1	0	0	0	0	0	0	0];
+    0	0	0	1	0   0	0	0];
 
 #Generator Array
 #Which nodes can supply power through already existing generation
@@ -96,7 +97,7 @@ for t in 1:T
             0
             0
             0
-            930*(0.683+0.317*cos(2*pi*t/8760+2*pi/24))
+            300*(0.683+0.317*cos(2*pi*t/8760+2*pi/24))
             0
             0];
 
@@ -178,4 +179,4 @@ out_file=[  "Standard generation (MW)" fill(-, 1, T-1)
             obj];
 
 # Write outputs to csv files (add file path before file name)
-#CSV.write("/Users/Antoine/Documents/pcm_out.csv", DataFrame(out_file), append = true)
+#CSV.write("/Users/Antoine/Documents/pcm_out_2C.csv", DataFrame(out_file), append = true)
