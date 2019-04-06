@@ -18,10 +18,10 @@ node_num = length(inputs[1]) # number of nodes considered in given scenario
 V = 2 # total number of potential voltage levels
 N = node_num # total number of nodes
 T = 12 # largest time value (hour)
-A = 1000 # large number used for dummy variable constraints
 L = inputs[47:47+node_num-1] # array of possible links (L[n,m] = 1 if there can be links b/w n & m)
 
 # Define parameters
+A = 1000 # large number used for dummy variable constraints
 d_nm = inputs[47+node_num:47+2*node_num-1] # distances between nodes n & m (km)
 a_v = inputs[40] # cost of links ($/km)
 b_v = inputs[41] # cost of substation ($/station)
@@ -30,9 +30,8 @@ f_v = inputs[39] # voltage level in (kV), also voltage base
 p_v = inputs[43] # power capacity of a link (MW)
 dem_nt = inputs[25:36] # power demand @ node n & time t (MW)
 lambda_n = inputs[38]
-fmax = 1.2 # maximum voltage value for nodes (pu)
-fmin = 0.80 # minimum voltage value for nodes (pu)
-dr = 0.1 # discount rate
+fmax = 1.05 # maximum voltage value for nodes (pu)
+fmin = 0.95 # minimum voltage value for nodes (pu)
 w = 3000 # marginal cost of adding wind genration ($/MW)
 c_n = zeros(Float64, N) # variable cost of wind farm construction depending on capacity in MW
 for n in 1:N
@@ -65,7 +64,6 @@ end)
 + sum(sub_num*y_v[v]*b_v[v] for v in 1:V) # cost of substations
 + sum(c_n[n]*z_n[n] for n in 1:N) # cost of generation construction
 + sum(24*(365/12)*25*lambda_n[n]*(g_nt[n,t] + del_nt[n,t]) for n in 1:N for t in 1:T)) # cost of operations
-#sum((1/((1+dr)^t))*(9e6*lambda_n[n]*(g_nt[n,t] + del_nt[n,t])) for n in 1:N for t in 1:T)) # NPV
 
 # Add constraints
 
@@ -80,7 +78,7 @@ for n in 1:N
     for t in 1:T
         @NLconstraint(mod, g_nt[n,t] == z_n[n]*g_nt[n,t]) # z_n[n] = 1 if g[n,t] > 0 for any t
         @constraint(mod, z_n[n] <= g_nt[n,t]) # ensures z_n[n] = 0 else
-            @constraint(mod, g_nt[4,t] >= 0.1)
+        @constraint(mod, g_nt[4,t] >= 0.1) # force wind at node 4
     end
 end
 
@@ -98,7 +96,6 @@ for t in 1:T
         @constraint(mod, sum(p_nmt[n,m,t] for m in 1:N if L[n,m] == 1) == g_nt[n,t] + del_nt[n,t] - dem_nt[n,t]) #power balance at a node
     end
 end
-is
 
 # Power flow in a link constraint (nonlinear)
 for n in 1:N
@@ -119,7 +116,6 @@ for n in 1:N
             if L[n,m] == 1
                 @constraint(mod, (p_nmt[n,m,t]) >= sum(-p_v[v]*x_nm[n,m] for v in 1:V)) # lower bound
                 @constraint(mod, (p_nmt[n,m,t]) <= sum(p_v[v]*x_nm[n,m] for v in 1:V)) # upper bound
-                #@constraint(mod, x_nm[m,n] == x_nm[n,m]) # links b/w n&m = links b/w m&n
             elseif L[n,m] == 0
                 @constraint(mod, x_nm[n,m] == 0) # no links between same node
                 @constraint(mod, p_nmt[n,m,t] == 0) # no power flow between same node
