@@ -7,23 +7,46 @@ using Ipopt
 using DataFrames
 using CSV
 
-# Define some input data about the test system
-# Maximum power output of generators
-const g_max = [0,80,1000,0,0,0,0,500];
-# Minimum power output of generators
-const g_min = [0,0,0,0,0,0,0,0];
-# Incremental cost of generators
-const c_g = [0,6,2,0,0,0,0,6];
-# Fixed cost of generators
-const c_g0 = [0,0,0,0,0,0,0,0];
-# Incremental cost of wind generators
-c_w = [0,0,0,0,0,5,5,0];
+#Number of nodes
+N=8;
+
 #Largest time value
 const T=10;
 #year is 8760
 
-#Number of nodes
-N=8;
+#Array of links
+L=[0	0	0	1	0	1	0	0
+    0	0	0	0	0	0	0	0
+    0	0	0	0	0	0	0	0
+    1	0	0	0	0	0	0	1
+    0	0	0	0	0	0	0	0
+    1	0	0	0	0	0	0	0
+    0	0	0	0	0	0	0	0
+    0	0	0	1	0	0	0	0];
+
+#Generator Array
+#Which nodes can supply power through already existing generation
+GB=[0,0,0,0,0,0,0,1];#This is/could essentially be a boolean
+
+#Load array
+#Which nodes can consume Power
+LB=[1,0,0,1,0,0,0,0];#Also essentially a boolean
+
+#Wind array
+#Which nodes can supply Wind
+WB=[0,0,0,0,0,1,0,0];#Also essentially a boolean
+
+# Define some input data about the test system
+# Maximum power output of generators
+const g_max = [0,80,1000,0,0,0,0,500]; #MW
+# Minimum power output of generators
+const g_min = [0,0,0,0,0,0,0,0]; #MW
+# Incremental cost of generators
+const c_g = [0,6,2,0,0,0,0,6]; #$/MWh
+# Fixed cost of generators
+const c_g0 = [0,0,0,0,0,0,0,0]; #$
+# Incremental cost of wind generators
+c_w = [0,0,0,0,0,5,5,0]; #$/MWh
 
 #Resistance
 R=0.0366; #ohm/km
@@ -47,27 +70,6 @@ for i=1:N
         end
     end
 end
-
-#Array of links
-L=[0    0	0	1	0	1	0	0
-    0	0	0	0	0	0	0	0
-    0	0	0	0	0	0	0	0
-    1	0	0	0	0	0	0	1
-    0	0	0	0	0	0	0	0
-    1	0	0	0	0	0	0   0
-    0	0	0	0	0	0	0	0
-    0	0	0	1	0   0	0	0];
-
-#Generator Array
-#Which nodes can supply power through already existing generation
-GB=[0,0,0,0,0,0,0,1];#This is/could essentially be a boolean
-
-#Which nodes can consume Power
-LB=[1,0,0,1,0,0,0,0]
-
-#Wind array
-#Which nodes can supply Wind
-WB=[0,0,0,0,0,1,0,0];#Also essentially a boolean
 
 #voltage levels
 V_target = 500 #kV
@@ -97,7 +99,7 @@ for t in 1:T
             0
             0
             0
-            300*(0.683+0.317*cos(2*pi*t/8760+2*pi/24))
+            300*(0.683+0.317*cos(2*pi*t/8760-2*pi/24))
             0
             0];
 
@@ -179,4 +181,4 @@ out_file=[  "Standard generation (MW)" fill(-, 1, T-1)
             obj];
 
 # Write outputs to csv files (add file path before file name)
-#CSV.write("/Users/Antoine/Documents/pcm_out_2C.csv", DataFrame(out_file), append = true)
+#CSV.write("/Users/Antoine/Documents/pcm_out_2C_full_modif.csv", DataFrame(out_file), append = true)
