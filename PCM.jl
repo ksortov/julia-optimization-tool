@@ -132,8 +132,6 @@ for t in 1:T
     for i in 1:N
         if LB[i] == 1 || GB[i] == 1 || WB[i] == 1
             @NLconstraint(ed, sum((v_nt[i] - v_nt[k]) * v_nt[i] * Y[i,k] * L[i,k] for k=1:N) == (g[i]+w[i]-dem[i]));
-        #else
-        #@constraint(ed, g[i] == 0)
         end
     end
 
